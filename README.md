@@ -13,9 +13,11 @@ results and fixes that can be offered to the PR.
 - **Review:** twelve findings, from undefined behaviour to a race that
   wedges the card ([review](docs/reviews/pr110196-sdhost-review.md)).
   Findings 1, 2, 4 and 6 reproduced on hardware, and 12 was found there.
-- **Fix:** `zephyr/patches/zephyr/sdhost-stop-open-read.patch` stops a
+- **Fixes:** `zephyr/patches/zephyr/sdhost-stop-open-read.patch` stops a
   multi-block read that runs on into the next block (finding 12), and a
-  failed one (finding 2 for reads).
+  failed one (finding 2 for reads). `sdhost-busy-timeouts.patch` waits as
+  long as the spec allows for a card's busy after a write or erase
+  (finding 1; not yet rerun on the Pi).
 - **On a real Pi 3A+ with a 64 GB SDXC card, with the fix** (21 October
   2026, [log](docs/reviews/logs/2026-10-21-sd-qual-pi3a-sdxc64-run8-corrected.log)):
   every qualification test passed except finding 4 (a 314 ms data timeout)

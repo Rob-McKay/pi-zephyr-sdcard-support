@@ -666,6 +666,24 @@ static int xfer(uint32_t opcode, uint32_t lba, uint32_t blocks, uint32_t block_s
 }
 
 /**
+ * @brief Send a busy (R1b) command without data, with the SD stack's
+ *        default command timeout, as the stack sends CMD38 erase.
+ *
+ * @param opcode Command opcode.
+ * @return The driver's request() result.
+ */
+static int busy_cmd(uint32_t opcode)
+{
+	struct sdhc_command cmd = {
+		.opcode = opcode,
+		.response_type = SD_RSP_TYPE_R1b,
+		.timeout_ms = SD_CMD_TIMEOUT_MS,
+	};
+
+	return sdhc_bcm2835_sdhost_request(&dut, &cmd, NULL);
+}
+
+/**
  * @brief Send CMD13 with the SD stack's default command timeout.
  *
  * @return The driver's request() result.
@@ -740,6 +758,16 @@ ZTEST(sdhost_sanity, test_multi_block_write_short_busy)
 	zassert_ok(send_status());
 }
 
+/** @brief A card that never ends its busy after CMD12 still fails the write, in time. */
+ZTEST(sdhost_sanity, test_endless_write_busy_times_out)
+{
+	int64_t t0 = k_uptime_get();
+
+	hw.busy_stop_us = INT64_C(60) * 1000 * 1000;
+	zassert_equal(xfer(SD_WRITE_MULTIPLE_BLOCK, 3, 2, BLOCK, buf, 200, 1000), -ETIMEDOUT);
+	zassert_true(k_uptime_get() - t0 < 3000, "took %lld ms", k_uptime_get() - t0);
+}
+
 /** @brief The bus clock never exceeds the requested one. */
 ZTEST(sdhost_sanity, test_clock_divider)
 {
@@ -757,14 +785,52 @@ ZTEST_SUITE(sdhost_sanity, NULL, suite_setup, before, NULL, NULL);
  * @brief Finding 1: a write survives 250 ms of busy after CMD12.
  *
  * Cards may hold DAT0 busy for up to 250 ms (500 ms SDXC) after CMD12 ends
- * a write (SD Physical Layer Simplified Spec v9.10, 4.6.2.2). The driver
- * waits 100 ms, fails the write and leaves the controller busy.
+ * a write (SD Physical Layer Simplified Spec v9.10, 4.6.2.2). The PR's
+ * driver waited 100 ms, failed the write and left the controller busy.
+ * Fixed by zephyr/patches/zephyr/sdhost-busy-timeouts.patch.
  */
 ZTEST(sdhost_review, test_f1_write_busy_250ms_after_stop)
 {
 	hw.busy_stop_us = INT64_C(250) * 1000;
 	zassert_ok(xfer(SD_WRITE_MULTIPLE_BLOCK, 3, 2, BLOCK, buf, 200, 10000),
 		   "spec-compliant 250 ms busy after CMD12 reported as an error");
+	zassert_ok(send_status(), "next command fails");
+}
+
+/**
+ * @brief Finding 1: a write survives an SDXC card's 500 ms of busy after
+ *        CMD12, even with a short data timeout.
+ */
+ZTEST(sdhost_review, test_f1_write_busy_sdxc_limit)
+{
+	hw.busy_stop_us = INT64_C(490) * 1000;
+	zassert_ok(xfer(SD_WRITE_MULTIPLE_BLOCK, 3, 2, BLOCK, buf, 200, 100),
+		   "490 ms busy after CMD12 reported as an error");
+	zassert_ok(send_status(), "next command fails");
+}
+
+/**
+ * @brief Finding 1: an erase survives busy longer than the command timeout.
+ *
+ * The SD stack sends CMD38 with its 200 ms command timeout; an erase can
+ * keep the card busy far longer (4.6.2.3). Seen on a real Pi 3A+: an
+ * 8-block erase failed with "CMD38 ... NEW_FLAG never cleared".
+ */
+ZTEST(sdhost_review, test_f1_erase_busy_past_cmd_timeout)
+{
+	hw.busy_r1b_us = INT64_C(2000) * 1000;
+	zassert_ok(busy_cmd(SD_ERASE_BLOCK_OPERATION), "2 s erase busy reported as an error");
+	zassert_ok(send_status(), "next command fails");
+}
+
+/**
+ * @brief Finding 1: other busy (R1b) commands get the spec's 500 ms too,
+ *        not the 200 ms command timeout.
+ */
+ZTEST(sdhost_review, test_f1_r1b_busy_past_cmd_timeout)
+{
+	hw.busy_r1b_us = INT64_C(400) * 1000;
+	zassert_ok(busy_cmd(SD_SELECT_CARD), "400 ms busy reported as an error");
 	zassert_ok(send_status(), "next command fails");
 }
 
@@ -1063,7 +1129,6 @@ ZTEST(sdhost_review, test_f10_block_size_over_limit)
 		      "2048-byte block accepted");
 }
 
-ZTEST_EXPECT_FAIL(sdhost_review, test_f1_write_busy_250ms_after_stop);
 ZTEST_EXPECT_FAIL(sdhost_review, test_f2_stale_fifo_after_timeout);
 ZTEST_EXPECT_FAIL(sdhost_review, test_f3_core_clock_not_250mhz);
 ZTEST_EXPECT_FAIL(sdhost_review, test_f4_data_timeout_follows_clock);

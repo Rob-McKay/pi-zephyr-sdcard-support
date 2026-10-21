@@ -1,0 +1,100 @@
+diff --git a/drivers/sdhc/sdhc_bcm2835_sdhost.c b/drivers/sdhc/sdhc_bcm2835_sdhost.c
+index 3881c19..d859c4a 100644
+--- a/drivers/sdhc/sdhc_bcm2835_sdhost.c
++++ b/drivers/sdhc/sdhc_bcm2835_sdhost.c
+@@ -134,6 +134,23 @@ LOG_MODULE_REGISTER(sdhc_bcm2835_sdhost, CONFIG_SDHC_LOG_LEVEL);
+  */
+ #define SDHOST_CMD_TIMEOUT_MS	100
+ 
++/* Minimum wait for a card's busy after a write's CMD12 or another busy
++ * (R1b) command. The longest write busy the SD spec allows is 500 ms
++ * (SDXC), and it recommends more than 500 ms for every card (Physical
++ * Layer Simplified Specification v9.10, 4.6.2.2). The command timeout the
++ * SD stack passes (CONFIG_SD_CMD_TIMEOUT, 200 ms by default) is for the
++ * response, not the busy that follows it.
++ */
++#define SDHOST_BUSY_TIMEOUT_MS	500
++
++/* Minimum wait for a card's busy after CMD38 erase. It grows with the
++ * amount erased (up to 250 ms a block when the card gives no erase
++ * parameters, 4.6.2.3), which the driver isn't told; the SD stack waits
++ * up to its data timeout (CONFIG_SD_DATA_TIMEOUT, 10 s by default) for
++ * the card to finish an erase anyway.
++ */
++#define SDHOST_ERASE_TIMEOUT_MS	10000
++
+ struct sdhc_bcm2835_sdhost_config {
+ 	DEVICE_MMIO_ROM;
+ 	const struct pinctrl_dev_config *pincfg;
+@@ -508,7 +525,7 @@ static void sdhost_issue_stop(uintptr_t base)
+ 		    SDCMD_BUSYWAIT | SDCMD_NEW_FLAG, base + SDCMD);
+ }
+ 
+-static int sdhost_send_stop(const struct device *dev)
++static int sdhost_send_stop(const struct device *dev, int timeout_ms)
+ {
+ 	uintptr_t base = DEVICE_MMIO_GET(dev);
+ 	uint32_t sdcmd;
+@@ -516,7 +533,8 @@ static int sdhost_send_stop(const struct device *dev)
+ 
+ 	sdhost_issue_stop(base);
+ 
+-	ret = sdhost_wait_cmd_done(dev, SDHOST_CMD_TIMEOUT_MS);
++	/* The card holds DAT0 busy while it programs what was written. */
++	ret = sdhost_wait_cmd_done(dev, MAX(timeout_ms, SDHOST_BUSY_TIMEOUT_MS));
+ 	if (ret != 0) {
+ 		LOG_ERR("%s CMD12 stop: NEW_FLAG never cleared", dev->name);
+ 		return ret;
+@@ -663,6 +681,7 @@ static int sdhc_bcm2835_sdhost_request(const struct device *dev,
+ 	uint32_t sdhsts;
+ 	uint32_t rsp;
+ 	int cmd_timeout_ms;
++	int done_timeout_ms;
+ 	int ret;
+ 
+ 	bool data_is_read = false;
+@@ -683,6 +702,7 @@ static int sdhc_bcm2835_sdhost_request(const struct device *dev,
+ 
+ 	cmd_timeout_ms = cmd->timeout_ms ? cmd->timeout_ms
+ 					 : SDHOST_CMD_TIMEOUT_MS;
++	done_timeout_ms = cmd_timeout_ms;
+ 
+ 	/* Make sure any previous command finished arming. The controller
+ 	 * latches SDCMD on NEW_FLAG transitions; a stale NEW_FLAG means
+@@ -731,10 +751,16 @@ static int sdhc_bcm2835_sdhost_request(const struct device *dev,
+ 		/* Busy response, e.g. CMD38 erase or CMD12 stop. SDCMD_BUSYWAIT
+ 		 * keeps the command active -- NEW_FLAG stays set -- until the
+ 		 * card releases DAT0 busy, so the NEW_FLAG poll below waits out
+-		 * the busy period, bounded by the command's timeout_ms. The
+-		 * response itself is the short 48-bit form, like R1.
++		 * the busy period, bounded by the command's timeout_ms and at
++		 * least SDHOST_BUSY_TIMEOUT_MS (SDHOST_ERASE_TIMEOUT_MS for
++		 * an erase). The response itself is the short 48-bit form,
++		 * like R1.
+ 		 */
+ 		sdcmd |= SDCMD_BUSYWAIT;
++		done_timeout_ms = MAX(cmd_timeout_ms,
++				      cmd->opcode == SD_ERASE_BLOCK_OPERATION
++					      ? SDHOST_ERASE_TIMEOUT_MS
++					      : SDHOST_BUSY_TIMEOUT_MS);
+ 		break;
+ 	default:
+ 		return -EINVAL;
+@@ -755,7 +781,7 @@ static int sdhc_bcm2835_sdhost_request(const struct device *dev,
+ 	sys_write32(cmd->arg, base + SDARG);
+ 	sys_write32(sdcmd | SDCMD_NEW_FLAG, base + SDCMD);
+ 
+-	ret = sdhost_wait_cmd_done(dev, cmd_timeout_ms);
++	ret = sdhost_wait_cmd_done(dev, done_timeout_ms);
+ 	if (ret != 0) {
+ 		LOG_ERR("%s CMD%u arg=0x%08x: NEW_FLAG never cleared",
+ 			dev->name, cmd->opcode, cmd->arg);
+@@ -825,7 +851,7 @@ static int sdhc_bcm2835_sdhost_request(const struct device *dev,
+ 			return sdhost_finish_open_read(dev, data_timeout_ms);
+ 		}
+ 		if (cmd->opcode == SD_WRITE_MULTIPLE_BLOCK) {
+-			ret = sdhost_send_stop(dev);
++			ret = sdhost_send_stop(dev, data_timeout_ms);
+ 			if (ret != 0) {
+ 				return ret;
+ 			}

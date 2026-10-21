@@ -32,6 +32,23 @@ patches:
     date: 2026-10-20
     upstreamable: true
     merge-status: false
+  # Review finding 1, seen on a real Pi 3A+ (tenth run, a 2 GB card): the
+  # driver waited only 100 ms for the card's busy after a write's CMD12,
+  # and only the SD stack's 200 ms command timeout for other busy (R1b)
+  # commands such as CMD38 erase, so slow but spec-compliant cards had
+  # writes and erases reported as failed although they succeeded. Now at
+  # least 500 ms (the spec's SDXC write busy, and its recommended minimum;
+  # the data timeout after a write), and 10 s for an erase. On top of
+  # sdhost-stop-open-read. Tested by tests/sdhost_review. Not yet sent
+  # upstream.
+  - path: zephyr/sdhost-busy-timeouts.patch
+    sha256sum: b010c4f5f673173743dfeafe795a338136af3b9da3b67504c08c95d01edd9c64
+    module: zephyr
+    author: Claude
+    email: noreply@anthropic.com
+    date: 2026-10-21
+    upstreamable: true
+    merge-status: false
   # The firmware driver gave the VideoCore the shared buffer's ARM
   # physical address. On BCM2837 the VideoCore must read ARM RAM through
   # the uncached alias in the soc node's dma-ranges (0xC0000000), as Linux

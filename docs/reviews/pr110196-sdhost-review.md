@@ -58,6 +58,8 @@ R1b commands issued by the SD stack (lines 599-608) are bounded the same way, by
 - For R1b commands, use at least the spec's busy limits.
 - On timeout, recover (finding 2).
 
+**Fixed here** by `zephyr/patches/zephyr/sdhost-busy-timeouts.patch`: the stop after a write waits the data timeout and at least 500 ms; other busy (R1b) commands at least 500 ms, and an erase at least 10 s (the driver isn't told how much is erased; the SD stack waits up to its 10 s data timeout for an erase anyway). The wait ends as soon as the card releases DAT0, so a card that isn't slow costs no more; a dead card is still cut off. The recovery after a timeout is finding 2's, not part of this fix. `tests/sdhost_review` checks a 250 ms and a 490 ms write busy, a 2 s erase and a 400 ms R1b busy (all failed before), and that an endless busy still times out. Not yet rerun on the Pi. With finding 6 still open, the longer waits are still spent spinning on the CPU.
+
 ### 2. No recovery after an error or timeout (High)
 
 **Where:** lines 562-567, 628-633, 680-683, and the PIO error returns at 351-355 and 363.
@@ -344,7 +346,8 @@ Finding 7 uses the pinned `pinctrl_bcm2711.c` against a logged fake GPIO block (
 
 | # | Test | Scenario | Fails today because |
 |---|---|---|---|
-| 1 | `test_f1_write_busy_250ms_after_stop` | CMD25 of 2 blocks; card busy 250 ms after CMD12 (the SDHC limit, [PLS §4.6.2.2](#ref-write)) | Request returns `-ETIMEDOUT` after 100 ms although the write succeeded |
+| 1 | `test_f1_write_busy_250ms_after_stop`, `test_f1_write_busy_sdxc_limit` | CMD25 of 2 blocks; card busy 250 ms (the SDHC limit, [PLS §4.6.2.2](#ref-write)), or 490 ms with a 100 ms data timeout, after CMD12 | Request returned `-ETIMEDOUT` after 100 ms although the write succeeded. Pass with `sdhost-busy-timeouts.patch` |
+| 1 | `test_f1_erase_busy_past_cmd_timeout`, `test_f1_r1b_busy_past_cmd_timeout` | CMD38 busy for 2 s, CMD7 busy for 400 ms, with the SD stack's 200 ms command timeout | Returned `-ETIMEDOUT` after 200 ms, as the erase did on the Pi. Pass with `sdhost-busy-timeouts.patch` |
 | 2 | `test_f2_failed_multiblock_read_is_stopped` | CRC error in block 2 of a 4-block CMD18 | No CMD12: the card is left in the data state |
 | 2 | `test_f2_stale_fifo_after_timeout` | Read of block 5 times out (card answers after 300 ms), then block 6 is read | The block 6 read returns block 5's data, with success |
 | 3 | `test_f3_core_clock_not_250mhz` | Core clock 400 MHz, 50 MHz requested | Bus runs at 80 MHz |
