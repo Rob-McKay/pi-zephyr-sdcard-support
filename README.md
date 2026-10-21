@@ -12,7 +12,7 @@ results and fixes that can be offered to the PR.
 
 - **Review:** twelve findings, from undefined behaviour to a race that
   wedges the card ([review](docs/reviews/pr110196-sdhost-review.md)).
-  Findings 2, 4 and 6 reproduced on hardware, and 12 was found there.
+  Findings 1, 2, 4 and 6 reproduced on hardware, and 12 was found there.
 - **Fix:** `zephyr/patches/zephyr/sdhost-stop-open-read.patch` stops a
   multi-block read that runs on into the next block (finding 12), and a
   failed one (finding 2 for reads).

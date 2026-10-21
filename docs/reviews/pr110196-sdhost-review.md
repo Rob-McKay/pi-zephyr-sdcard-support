@@ -6,7 +6,7 @@
 | Commit reviewed | `b3b4961`, as carried in [`zephyr/patches/zephyr/pr110196-bcm2835-sdhost.patch`](../../zephyr/patches/zephyr/pr110196-bcm2835-sdhost.patch) |
 | Date | 17 October 2026 |
 | Focus | Undefined behaviour (UB), implementation-defined behaviour (IB), race conditions, security |
-| Method | Code reading of `drivers/sdhc/sdhc_bcm2835_sdhost.c` (all line numbers below), its devicetree and binding. Callers checked against the pinned Zephyr (`subsys/sd`, `include/zephyr/drivers/sdhc.h`, `drivers/pinctrl/pinctrl_bcm2711.c`). Zephyr's SD tests pass on QEMU (`make sd-test`), but QEMU completes transfers instantly and doesn't model the controller's timing. **On a real Pi 3A+ (20 October 2026):** findings 2, 4 and 6 reproduced, and a new one, 12, found: see [section 7](#7-results-on-a-real-pi-3a) |
+| Method | Code reading of `drivers/sdhc/sdhc_bcm2835_sdhost.c` (all line numbers below), its devicetree and binding. Callers checked against the pinned Zephyr (`subsys/sd`, `include/zephyr/drivers/sdhc.h`, `drivers/pinctrl/pinctrl_bcm2711.c`). Zephyr's SD tests pass on QEMU (`make sd-test`), but QEMU completes transfers instantly and doesn't model the controller's timing. **On a real Pi 3A+ (20 October 2026):** findings 2, 4 and 6 reproduced (and 1, on a slow 2 GB card, later), and a new one, 12, found: see [section 7](#7-results-on-a-real-pi-3a) |
 | Status | **Not posted upstream.** [Section 5](#5-draft-upstream-comment) has a draft |
 | Tests | On a real Pi 3A+ and card: [`tests/sdhost_hw`](../../tests/sdhost_hw) (`make sd-hw-test`), see [section 6.1](#61-on-a-real-pi-3a). Without hardware: findings 1-10 are reproduced against a register model by [`tests/sdhost_review`](../../tests/sdhost_review) (part of `make test`), see [section 6.2](#62-against-a-model-of-the-controller) |
 
@@ -47,6 +47,7 @@ The problems are in **timeouts and error recovery**. They are likely to show on 
 - After an open-ended CMD25 write, CMD12 is sent with `SDCMD_BUSYWAIT`. `NEW_FLAG` stays set until the card releases DAT0, which it holds while programming.
 - The SD Physical Layer spec allows a write busy of up to 250 ms (SDSC/SDHC) or 500 ms (SDXC) ([PLS §4.6.2.2](#ref-write)), and a slow or worn card can use all of it.
 - The wait is bounded at 100 ms, so the request returns `-ETIMEDOUT` although the data was written.
+- **Seen on hardware** ([section 7](#7-results-on-a-real-pi-3a), tenth run, a 2 GB card): five multi-block writes reported as failed although the card confirmed every block written, and an 8-block erase the same way through the R1b timeout. The controller was not left stuck there: it clears `NEW_FLAG` once the card releases DAT0, which happened before the next request.
 - `NEW_FLAG` is then still set, so every later request fails at line 562 ("previous command never completed") until something resets the controller.
 
 R1b commands issued by the SD stack (lines 599-608) are bounded the same way, by `cmd->timeout_ms` (`CONFIG_SD_CMD_TIMEOUT`, 200 ms by default). An erase (CMD38) can be busy for seconds: its timeout scales with the number of blocks erased, 250 ms per block when the card gives no erase parameters ([PLS §4.6.2.3](#ref-erase)).
@@ -465,6 +466,17 @@ So far finding 12 has struck in all nine tests that repeat multi-block reads, ac
 | Bounds | Past-the-end and wrapping ranges refused, as on the SDXC card |
 | Data timeout | SDTOUT 629 ms at 25 MHz, so finding 4's check passed: the same register value lasts twice as long at half the clock |
 | Speed | Sequential reads to 3.1 MB/s; random 4 KB reads 543/s (max latency 2.2 ms) |
+
+**Tenth run**, the same 2 GB card with the test image's boot files and room for a scratch area, so the write tests ran ([log](logs/2026-10-21-sd-qual-pi3a-sd2gb-run10.log)). The firmware was the ninth run's (`zephyr.bin` CRC-32 `507507dd` in both), so without the bus-width fix, which explains `test_bus_4bit` failing again: rebuild the Docker image (`make image`) to pick up new patches.
+
+| Area | Result |
+|---|---|
+| **Finding 1 reproduced** | Five writes failed with `CMD12 stop: NEW_FLAG never cleared`: the card was still busy programming when the driver's 100 ms wait for the stop command ran out. Each time the SD stack then asked the card how many blocks it had written (ACMD22), and the card answered all of them ("Only 17 blocks of 17 were written"): **the data was written, but the write was reported as failed** (-EIO). An 8-block erase failed the same way (`CMD38 ... NEW_FLAG never cleared`): the erase's busy outlasted the stack's 200 ms command timeout. Failed: `test_4_misaligned_buffers`, `test_5_neighbours_untouched`, `test_1_small_erase_exact`, `test_4_random_write` and the soak, after 8 operations |
+| No wedge | Unlike the review's prediction, the controller was not left stuck: the next request each time found the stop finished (the controller clears NEW_FLAG itself when the card releases DAT0), so no recovery was needed and the next tests passed. A request arriving while the card is still busy would still fail |
+| Data integrity | Patterns, transfer sizes, chunking, overwrites, address bits, a 40 s random mix, the boot files (read 3 ways, CRC as on the host), the card's last blocks and the soak area's final verify all good |
+| Reads | 1,000 multi-block reads (128,827 blocks), no run-ons, no recoveries |
+| Speed (1 bit, 25 MHz) | Sequential reads to 3.1 MB/s, writes to 3.1 MB/s; random 4 KB reads 546/s |
+| Concurrency | All data right, 128 s (22 s on the SDXC card at 4 bits and 50 MHz); the lower-priority thread ran 0 times (finding 6) |
 
 **Zephyr's own suites**, as the PR reports them (`make sd-zephyr-hw-test`), same Pi and card ([log](logs/2026-10-20-zephyr-sdhc-disk_access-pi3a-sdxc64.log)):
 

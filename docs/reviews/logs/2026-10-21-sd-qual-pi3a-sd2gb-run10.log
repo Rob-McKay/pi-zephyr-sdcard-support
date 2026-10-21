@@ -1,0 +1,283 @@
+
+
+
+
+Raspberry Pi Bootcode
+Read File: config.txt, 454
+Read File: start_cd.elf, 844380 (bytes)
+Read File: fixup_cd.dat, 3280 (bytes)
+[0m<inf> sdhc_bcm2835_sdhost: mmc@3f202000 init ok (clk_in=250000000 Hz, bus=4-bit, SDEDM=0x00010800 [FSM=0x0 rd_thr=4 wr_thr=4])[0m
+*** Booting Zephyr OS build a915b2f12675 ***
+Running TESTSUITE sdcard_1_identify
+===================================================================
+card: 3862528 blocks of 512 bytes (1886 MB)
+bus: 1-bit, core clock 250000000 Hz / (SDCDIV 8 + 2) = 25000000 Hz
+scratch area: blocks 3731456-3862527 (64 MB, written by these tests)
+random seed: 12185613 (CONFIG_SDCARD_HW_SEED repeats it)
+START - test_bus_4bit
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_1_identify.c:46: sdcard_1_identify_test_bus_4bit: (hal_sdhost_bus_is_4bit(sdq_sdhost_regs()) is false)
+the driver left the bus 1 bit wide: a quarter of the speed
+ FAIL - test_bus_4bit in 0.019 seconds
+===================================================================
+START - test_bus_clock_in_spec
+SD bus clock 25000000 Hz
+ PASS - test_bus_clock_in_spec in 0.003 seconds
+===================================================================
+START - test_data_timeout_covers_busy
+SDTOUT 15728640 cycles = 629 ms at 25000000 Hz
+ PASS - test_data_timeout_covers_busy in 0.005 seconds
+===================================================================
+START - test_disk_ready
+ PASS - test_disk_ready in 0.001 seconds
+===================================================================
+START - test_ioctls
+ PASS - test_ioctls in 0.001 seconds
+===================================================================
+TESTSUITE sdcard_1_identify failed.
+Running TESTSUITE sdcard_2_bootfs
+===================================================================
+boot partition at block 2048: 1 blocks a cluster, 7 files
+START - test_1_layout
+ PASS - test_1_layout in 0.001 seconds
+===================================================================
+START - test_2_config_txt
+ PASS - test_2_config_txt in 0.002 seconds
+===================================================================
+START - test_3_files_read_consistently
+LICENC~1.BRO     1594 bytes  crc32 ac43b6db  (11 ms for the 3 reads)
+BOOTCODE.BIN    52624 bytes  crc32 53c9b136  (341 ms for the 3 reads)
+CONFIG.TXT        454 bytes  crc32 f04fd842  (1 ms for the 3 reads)
+FIXUP_CD.DAT     3280 bytes  crc32 5aec4a9b  (20 ms for the 3 reads)
+START_CD.ELF   844380 bytes  crc32 0a4e81da  (5362 ms for the 3 reads)
+ZEPHYR.BIN    3457028 bytes  crc32 507507dd  (21924 ms for the 3 reads)
+ZEPHYR.CRC          9 bytes  crc32 5c569353  (1 ms for the 3 reads)
+ PASS - test_3_files_read_consistently in 27.702 seconds
+===================================================================
+START - test_4_image_crc_matches_host
+ PASS - test_4_image_crc_matches_host in 7.311 seconds
+===================================================================
+START - test_5_multi_block_read_stress
+1000 multi-block reads, 128827 blocks, 3033 kB/s
+ PASS - test_5_multi_block_read_stress in 22.873 seconds
+===================================================================
+TESTSUITE sdcard_2_bootfs succeeded
+Running TESTSUITE sdcard_3_integrity
+===================================================================
+START - test_1_patterns
+ PASS - test_1_patterns in 0.125 seconds
+===================================================================
+START - test_2_transfer_sizes
+ PASS - test_2_transfer_sizes in 3.509 seconds
+===================================================================
+START - test_3_chunking
+ PASS - test_3_chunking in 1.113 seconds
+===================================================================
+START - test_4_misaligned_buffers
+[1;31m<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD12 stop: NEW_FLAG never cleared[0m
+[1;31m<err> sd: Only 17 blocks of 17 were written[0m
+[1;31m<err> sd: Write failed[0m
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_3_integrity.c:184: sdcard_3_integrity_test_4_misaligned_buffers: (disk_access_write(SDQ_DISK, &sdq_wbuf[off], lba, 17) is non-zero)
+write, offset 1
+ FAIL - test_4_misaligned_buffers in 0.165 seconds
+===================================================================
+START - test_5_neighbours_untouched
+[1;31m<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD12 stop: NEW_FLAG never cleared[0m
+[1;31m<err> sd: Only 3 blocks of 3 were written[0m
+[1;31m<err> sd: Write failed[0m
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_3_integrity.c:218: sdcard_3_integrity_test_5_neighbours_untouched: disk_access_write(SDQ_DISK, sdq_wbuf, lba + at, 3) is non-zero
+
+ FAIL - test_5_neighbours_untouched in 0.195 seconds
+===================================================================
+START - test_6_overwrite
+ PASS - test_6_overwrite in 0.285 seconds
+===================================================================
+START - test_7_address_bits
+ PASS - test_7_address_bits in 0.893 seconds
+===================================================================
+START - test_8_random_mix
+ PASS - test_8_random_mix in 41.823 seconds
+===================================================================
+TESTSUITE sdcard_3_integrity failed.
+Running TESTSUITE sdcard_4_bounds
+===================================================================
+START - test_1_first_blocks
+ PASS - test_1_first_blocks in 0.024 seconds
+===================================================================
+START - test_2_last_blocks
+ PASS - test_2_last_blocks in 0.042 seconds
+===================================================================
+START - test_3_past_the_end_refused
+ PASS - test_3_past_the_end_refused in 0.002 seconds
+===================================================================
+START - test_4_wrapping_range_refused
+ PASS - test_4_wrapping_range_refused in 0.002 seconds
+===================================================================
+START - test_5_whole_range_sampled
+ PASS - test_5_whole_range_sampled in 0.721 seconds
+===================================================================
+TESTSUITE sdcard_4_bounds succeeded
+Running TESTSUITE sdcard_5_erase
+===================================================================
+START - test_1_small_erase_exact
+[1;31m<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD38 arg=0x00000000: NEW_FLAG never cleared[0m
+[1;31m<err> sd: Erase failed[0m
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_5_erase.c:50: sdcard_5_erase_test_1_small_erase_exact: disk_access_erase(SDQ_DISK, lba + 8U, 8, DISK_ACCESS_ERASE_PHYSICAL) is non-zero
+
+ FAIL - test_1_small_erase_exact in 0.252 seconds
+===================================================================
+START - test_2_single_block_then_write
+ PASS - test_2_single_block_then_write in 0.024 seconds
+===================================================================
+START - test_3_large_erase
+8 MB erase: 0 after 23 ms
+ PASS - test_3_large_erase in 5.574 seconds
+===================================================================
+TESTSUITE sdcard_5_erase failed.
+Running TESTSUITE sdcard_6_perf
+===================================================================
+START - test_1_sequential_read
+sequential read, from block 0:
+     1 blocks/request:    934 kB/s
+     8 blocks/request:   2306 kB/s
+    64 blocks/request:   2963 kB/s
+   256 blocks/request:   3064 kB/s
+  2048 blocks/request:   3095 kB/s
+ PASS - test_1_sequential_read in 13.052 seconds
+===================================================================
+START - test_2_sequential_write
+sequential write, scratch area:
+     1 blocks/request:    240 kB/s
+     8 blocks/request:   1259 kB/s
+    64 blocks/request:   2833 kB/s
+   256 blocks/request:   3009 kB/s
+  2048 blocks/request:   3068 kB/s
+ PASS - test_2_sequential_write in 19.917 seconds
+===================================================================
+START - test_3_random_read
+random 4 KB read: 500 ops, 546 ops/s, latency min 1400 us, avg 1830 us, max 2200 us
+ PASS - test_3_random_read in 0.924 seconds
+===================================================================
+START - test_4_random_write
+[1;31m<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD12 stop: NEW_FLAG never cleared[0m
+[1;31m<err> sd: Only 8 blocks of 8 were written[0m
+[1;31m<err> sd: Write failed[0m
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_6_perf.c:150: sdcard_6_perf_test_4_random_write: (disk_access_write(SDQ_DISK, sdq_wbuf, lba, 8) is non-zero)
+write 3775792
+ FAIL - test_4_random_write in 0.388 seconds
+===================================================================
+TESTSUITE sdcard_6_perf failed.
+Running TESTSUITE sdcard_7_concurrency
+===================================================================
+START - test_1_writers_and_reader
+3 writers x 1 MB x 40 rounds and a reader: 128021 ms; a lower-priority thread ran 0 times in that time (128021 if never blocked)
+ PASS - test_1_writers_and_reader in 128.035 seconds
+===================================================================
+TESTSUITE sdcard_7_concurrency succeeded
+Running TESTSUITE sdcard_8_recovery
+===================================================================
+START - test_1_power_cycles
+20 power cycles; slowest card init 28 ms
+ PASS - test_1_power_cycles in 0.824 seconds
+===================================================================
+START - test_2_write_then_power_off
+ PASS - test_2_write_then_power_off in 0.272 seconds
+===================================================================
+START - test_3_unanswered_command
+CID ioctl: -116 (CMD2 is not answered in transfer state)
+ PASS - test_3_unanswered_command in 0.008 seconds
+===================================================================
+TESTSUITE sdcard_8_recovery succeeded
+Running TESTSUITE sdcard_9_soak
+===================================================================
+START - test_1_random_workload
+soak for 600 s over 64 MB
+[1;31m<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD12 stop: NEW_FLAG never cleared[0m
+[1;31m<err> sd: Only 46 blocks of 46 were written[0m
+[1;31m<err> sd: Write failed[0m
+operation write 3779689+46 failed: -5
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_9_soak.c:134: sdcard_9_soak_test_1_random_workload: (one_op(&s, gen) is non-zero)
+after 8 operations
+ FAIL - test_1_random_workload in 1.166 seconds
+===================================================================
+START - test_2_final_verify
+scratch area verified
+ PASS - test_2_final_verify in 21.677 seconds
+===================================================================
+TESTSUITE sdcard_9_soak failed.
+Running TESTSUITE sdcard_zz_summary
+===================================================================
+START - test_no_recovery_needed
+recoveries needed during the run: 0, of which 0 failed
+ PASS - test_no_recovery_needed in 0.005 seconds
+===================================================================
+TESTSUITE sdcard_zz_summary succeeded
+
+------ TESTSUITE SUMMARY START ------
+
+SUITE FAIL -  80.00% [sdcard_1_identify]: pass = 4, fail = 1, skip = 0, total = 5 duration = 0.029 seconds
+ - FAIL - [sdcard_1_identify.test_bus_4bit] duration = 0.019 seconds
+ - PASS - [sdcard_1_identify.test_bus_clock_in_spec] duration = 0.003 seconds
+ - PASS - [sdcard_1_identify.test_data_timeout_covers_busy] duration = 0.005 seconds
+ - PASS - [sdcard_1_identify.test_disk_ready] duration = 0.001 seconds
+ - PASS - [sdcard_1_identify.test_ioctls] duration = 0.001 seconds
+
+SUITE PASS - 100.00% [sdcard_2_bootfs]: pass = 5, fail = 0, skip = 0, total = 5 duration = 57.889 seconds
+ - PASS - [sdcard_2_bootfs.test_1_layout] duration = 0.001 seconds
+ - PASS - [sdcard_2_bootfs.test_2_config_txt] duration = 0.002 seconds
+ - PASS - [sdcard_2_bootfs.test_3_files_read_consistently] duration = 27.702 seconds
+ - PASS - [sdcard_2_bootfs.test_4_image_crc_matches_host] duration = 7.311 seconds
+ - PASS - [sdcard_2_bootfs.test_5_multi_block_read_stress] duration = 22.873 seconds
+
+SUITE FAIL -  75.00% [sdcard_3_integrity]: pass = 6, fail = 2, skip = 0, total = 8 duration = 48.108 seconds
+ - PASS - [sdcard_3_integrity.test_1_patterns] duration = 0.125 seconds
+ - PASS - [sdcard_3_integrity.test_2_transfer_sizes] duration = 3.509 seconds
+ - PASS - [sdcard_3_integrity.test_3_chunking] duration = 1.113 seconds
+ - FAIL - [sdcard_3_integrity.test_4_misaligned_buffers] duration = 0.165 seconds
+ - FAIL - [sdcard_3_integrity.test_5_neighbours_untouched] duration = 0.195 seconds
+ - PASS - [sdcard_3_integrity.test_6_overwrite] duration = 0.285 seconds
+ - PASS - [sdcard_3_integrity.test_7_address_bits] duration = 0.893 seconds
+ - PASS - [sdcard_3_integrity.test_8_random_mix] duration = 41.823 seconds
+
+SUITE PASS - 100.00% [sdcard_4_bounds]: pass = 5, fail = 0, skip = 0, total = 5 duration = 0.791 seconds
+ - PASS - [sdcard_4_bounds.test_1_first_blocks] duration = 0.024 seconds
+ - PASS - [sdcard_4_bounds.test_2_last_blocks] duration = 0.042 seconds
+ - PASS - [sdcard_4_bounds.test_3_past_the_end_refused] duration = 0.002 seconds
+ - PASS - [sdcard_4_bounds.test_4_wrapping_range_refused] duration = 0.002 seconds
+ - PASS - [sdcard_4_bounds.test_5_whole_range_sampled] duration = 0.721 seconds
+
+SUITE FAIL -  66.67% [sdcard_5_erase]: pass = 2, fail = 1, skip = 0, total = 3 duration = 5.850 seconds
+ - FAIL - [sdcard_5_erase.test_1_small_erase_exact] duration = 0.252 seconds
+ - PASS - [sdcard_5_erase.test_2_single_block_then_write] duration = 0.024 seconds
+ - PASS - [sdcard_5_erase.test_3_large_erase] duration = 5.574 seconds
+
+SUITE FAIL -  75.00% [sdcard_6_perf]: pass = 3, fail = 1, skip = 0, total = 4 duration = 34.281 seconds
+ - PASS - [sdcard_6_perf.test_1_sequential_read] duration = 13.052 seconds
+ - PASS - [sdcard_6_perf.test_2_sequential_write] duration = 19.917 seconds
+ - PASS - [sdcard_6_perf.test_3_random_read] duration = 0.924 seconds
+ - FAIL - [sdcard_6_perf.test_4_random_write] duration = 0.388 seconds
+
+SUITE PASS - 100.00% [sdcard_7_concurrency]: pass = 1, fail = 0, skip = 0, total = 1 duration = 128.035 seconds
+ - PASS - [sdcard_7_concurrency.test_1_writers_and_reader] duration = 128.035 seconds
+
+SUITE PASS - 100.00% [sdcard_8_recovery]: pass = 3, fail = 0, skip = 0, total = 3 duration = 1.104 seconds
+ - PASS - [sdcard_8_recovery.test_1_power_cycles] duration = 0.824 seconds
+ - PASS - [sdcard_8_recovery.test_2_write_then_power_off] duration = 0.272 seconds
+ - PASS - [sdcard_8_recovery.test_3_unanswered_command] duration = 0.008 seconds
+
+SUITE FAIL -  50.00% [sdcard_9_soak]: pass = 1, fail = 1, skip = 0, total = 2 duration = 22.843 seconds
+ - FAIL - [sdcard_9_soak.test_1_random_workload] duration = 1.166 seconds
+ - PASS - [sdcard_9_soak.test_2_final_verify] duration = 21.677 seconds
+
+SUITE PASS - 100.00% [sdcard_zz_summary]: pass = 1, fail = 0, skip = 0, total = 1 duration = 0.005 seconds
+ - PASS - [sdcard_zz_summary.test_no_recovery_needed] duration = 0.005 seconds
+
+------ TESTSUITE SUMMARY END ------
+
+===================================================================
+PROJECT EXECUTION FAILED
