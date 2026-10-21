@@ -19,6 +19,7 @@ patches, run `make image`**.
 | `sdhost-stop-open-read.patch` | none yet (on top of #110196) | Stops a multi-block read that runs on, and a failed one: review findings 12, and 2 for reads | Found and confirmed on a real Pi 3A+ (eighth run: every test passed, no run-ons in over 100,000 multi-block reads). Not yet sent upstream |
 | `rpi-fw-bus-address.patch` | none yet | Firmware mailbox on a real Pi 3A+, which the tests use to read the core clock | Not yet sent upstream |
 | `sd-ops-bounds-overflow.patch` | none yet | Zephyr's SD stack refuses read and write ranges that wrap past block 0xffffffff (`subsys/sd/sd_ops.c`); not the SDHost driver | Still in Zephyr main on 21 October 2026. Tested by `tests/sd_bounds` (`make test`), and passed on a real Pi 3A+ with two cards (ninth run). Not yet sent upstream; independent of #110196 |
+| `sdmmc-4bit-without-hs.patch` | none yet | Zephyr's SD stack widens the bus to 4 bits on cards without High Speed too (`subsys/sd/sdmmc.c`, `sdmmc_init_hs()`); every SD memory card supports 4 bits (PLS v9.10 §5.6). Not the SDHost driver | Still in Zephyr main on 21 October 2026. Found on a 2 GB card on the Pi (ninth run); tested by `tests/sd_bus_width` (`make test`), not yet rerun on the Pi. Not yet sent upstream; independent of #110196 |
 
 The board support PR of the same series,
 [#110189](https://github.com/zephyrproject-rtos/zephyr/pull/110189), has

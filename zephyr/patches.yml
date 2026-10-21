@@ -61,3 +61,18 @@ patches:
     date: 2026-10-21
     upstreamable: true
     merge-status: false
+  # Zephyr's SD stack switched a card to a 4-bit bus only after switching
+  # it to High Speed (sdmmc_init_hs()), so a card without High Speed stayed
+  # on one data line, at a quarter of the speed: seen on a 2 GB card on a
+  # real Pi 3A+ (ninth run, 3.1 MB/s). Every SD memory card supports 4 bits
+  # (SD Physical Layer Simplified Specification v9.10, section 5.6,
+  # SD_BUS_WIDTHS). Now the bus is widened either way. Still in Zephyr main
+  # on 21 October 2026. Tested by tests/sd_bus_width. Not yet sent upstream.
+  - path: zephyr/sdmmc-4bit-without-hs.patch
+    sha256sum: 10e59f54d95227fcfc9f8df8a13541f99a8c2fd092f8cf14fde1f97d4a932cbf
+    module: zephyr
+    author: Claude
+    email: noreply@anthropic.com
+    date: 2026-10-21
+    upstreamable: true
+    merge-status: false

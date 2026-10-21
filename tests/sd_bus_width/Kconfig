@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# The fake controller in src/main.c stands in for a native-mode SD host
+# controller driver, which would select this.
+config TEST_FAKE_SDHC
+	bool
+	default y
+	select SDHC_SUPPORTS_NATIVE_MODE
+
+source "Kconfig.zephyr"

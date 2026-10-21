@@ -9,7 +9,8 @@ GENERATE_XML           = YES
 XML_PROGRAMLISTING     = NO
 QUIET                  = YES
 INPUT                  = hal/include tests/sdhost_review/src tests/sdhost_hw/src \
-                         tests/sdcard_hw/src tests/sd_bounds/src tests/hal_bcm2835/src \
+                         tests/sdcard_hw/src tests/sd_bounds/src \
+                         tests/sd_bus_width/src tests/hal_bcm2835/src \
                          scripts/check-docs.py scripts/check-coverage.py
 FILE_PATTERNS          = *.c *.h *.py
 RECURSIVE              = YES

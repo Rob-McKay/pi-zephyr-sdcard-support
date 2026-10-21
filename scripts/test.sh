@@ -9,6 +9,9 @@
 #   tests/sd_bounds      Zephyr's SD stack range checks against a fake
 #                        controller: ranges past the end, including ones
 #                        that wrap past block 0xffffffff, are refused
+#   tests/sd_bus_width   Zephyr's SD stack initialising a fake card on a
+#                        fake controller: the bus is widened to 4 bits
+#                        whether or not the card supports High Speed
 #   tests/hal_bcm2835    the hardware abstraction layer (hal/) against
 #                        RAM-backed registers
 #
@@ -33,7 +36,7 @@ if grep -rnE '\bsys_(read|write)(8|16|32|64)\(' "$here/tests/sdhost_hw/src" \
 	exit 1
 fi
 
-for t in sdhost_review sd_bounds hal_bcm2835; do
+for t in sdhost_review sd_bounds sd_bus_width hal_bcm2835; do
 	build_dir="$here/build/test-$t"
 	west build -p auto -b native_sim/native/64 -d "$build_dir" "$here/tests/$t"
 	# Coverage counts accumulate across runs: start from zero.

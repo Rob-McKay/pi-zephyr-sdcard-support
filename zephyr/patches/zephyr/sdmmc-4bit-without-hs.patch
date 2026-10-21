@@ -1,0 +1,60 @@
+diff --git a/subsys/sd/sdmmc.c b/subsys/sd/sdmmc.c
+index 2049d52f8..55582928a 100644
+--- a/subsys/sd/sdmmc.c
++++ b/subsys/sd/sdmmc.c
+@@ -572,6 +572,27 @@ static int sdmmc_init_uhs(struct sd_card *card)
+ 	return ret;
+ }
+ 
++/*
++ * Raises the bus width to 4 bits if the host and card support it. Every SD
++ * memory card supports 4-bit transfers, at any bus speed (SD Physical
++ * Layer Specification, section 5.6, SD_BUS_WIDTHS), so this does not
++ * depend on high speed support.
++ */
++static int sdmmc_init_bus_width(struct sd_card *card)
++{
++	int ret;
++
++	if (card->host_props.is_spi || !card->host_props.bus_4_bit_support ||
++	    !(card->flags & SD_4BITS_WIDTH)) {
++		return 0;
++	}
++	ret = sdmmc_set_bus_width(card, SDHC_BUS_WIDTH4BIT);
++	if (ret) {
++		LOG_ERR("Failed to change card bus width to 4 bits");
++	}
++	return ret;
++}
++
+ /* Performs initialization for SD high speed cards */
+ static int sdmmc_init_hs(struct sd_card *card)
+ {
+@@ -580,8 +601,8 @@ static int sdmmc_init_hs(struct sd_card *card)
+ 	if ((!card->host_props.host_caps.high_spd_support) ||
+ 	    (card->sd_version < SD_SPEC_VER1_1) ||
+ 	    (card->switch_caps.hs_max_dtr == HS_UNSUPPORTED)) {
+-		/* No high speed support. Leave card untouched */
+-		return 0;
++		/* No high speed support. Leave the bus speed untouched */
++		return sdmmc_init_bus_width(card);
+ 	}
+ 	/* Select bus speed for card depending on host and card capability*/
+ 	sdmmc_select_bus_speed(card);
+@@ -591,15 +612,7 @@ static int sdmmc_init_hs(struct sd_card *card)
+ 		LOG_ERR("Failed to switch card to HS mode");
+ 		return ret;
+ 	}
+-	if (card->host_props.bus_4_bit_support && (card->flags & SD_4BITS_WIDTH)) {
+-		/* Raise bus width to 4 bits */
+-		ret = sdmmc_set_bus_width(card, SDHC_BUS_WIDTH4BIT);
+-		if (ret) {
+-			LOG_ERR("Failed to change card bus width to 4 bits");
+-			return ret;
+-		}
+-	}
+-	return 0;
++	return sdmmc_init_bus_width(card);
+ }
+ 
+ /*

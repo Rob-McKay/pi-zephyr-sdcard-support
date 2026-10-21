@@ -460,7 +460,7 @@ So far finding 12 has struck in all nine tests that repeat multi-block reads, ac
 
 | Area | Result |
 |---|---|
-| **Bus width** | **Left at 1 bit**, at 25 MHz (Default Speed), so reads top out at 3.1 MB/s instead of about 12. Not the driver's bug: Zephyr's SD stack (`subsys/sd/sdmmc.c`, `sdmmc_init_hs()`) only switches to 4 bits after switching to High Speed, and returns early for a card without High Speed (or older than SD 1.10). 4-bit transfers are mandatory for SD memory cards and independent of the bus speed |
+| **Bus width** | **Left at 1 bit**, at 25 MHz (Default Speed), so reads top out at 3.1 MB/s instead of about 12. Not the driver's bug: Zephyr's SD stack (`subsys/sd/sdmmc.c`, `sdmmc_init_hs()`) only switches to 4 bits after switching to High Speed, and returns early for a card without High Speed (or older than SD 1.10). 4-bit transfers are mandatory for SD memory cards and independent of the bus speed ([PLS §5.6](#ref-buswidth), [Chapter 2](#ref-features)). Since fixed here (`sdmmc-4bit-without-hs.patch`) |
 | Reads | 1,000 multi-block reads (127,185 blocks) and the whole address range sampled, all good, no run-ons and no recoveries: finding 12's fix works on a second card, and on the byte-addressed path |
 | Bounds | Past-the-end and wrapping ranges refused, as on the SDXC card |
 | Data timeout | SDTOUT 629 ms at 25 MHz, so finding 4's check passed: the same register value lasts twice as long at half the clock |
@@ -502,6 +502,8 @@ Card timings above are from the SD Association's **SD Specifications Part 1, Phy
 | <a id="ref-erase"></a>PLS §4.6.2.3 | 4.6.2.3 "Erase", p. 96 | The host should take the erase timeout from the SD Status parameters (4.10.2, `ERASE_SIZE`, `ERASE_TIMEOUT`, `ERASE_OFFSET`, pp. 128-129; calculation in 4.14, p. 171). Without them: "the number of write blocks (WRITE_BL) to be erased multiplied by 250 ms" |
 | <a id="ref-capacity"></a>PLS §3.3.2 | 3.3.2 "Card Capacity Classification", p. 6 | SDHC: more than 2 GB up to and including 32 GB. SDXC: more than 32 GB up to and including 2 TB |
 | <a id="ref-ds"></a>PLS §5.3.2 | 5.3.2 "CSD Register (CSD Version 1.0)", `TRAN_SPEED`, after Table 5-6, p. 227 | 25 MHz is "the mandatory maximum operating frequency of SD Memory Card" (Default Speed); in High-Speed mode `TRAN_SPEED` reads 50 MHz. Chapter 2 "System Features" (p. 3) lists the same: Default Speed up to 25 MHz, High Speed up to 50 MHz |
+| <a id="ref-buswidth"></a>PLS §5.6 | 5.6 "SCR register", `SD_BUS_WIDTHS`, after Table 5-21, p. 244 | "Since the SD Memory Card shall support at least the two bus modes 1-bit or 4-bit width, then any SD Card shall set at least bits 0 and 2 (SD_BUS_WIDTH="0101")." |
+| <a id="ref-features"></a>PLS Chapter 2 | 2 "System Features", p. 3 | "Bus Speed Mode - using 4 parallel data lines: (1) Default Speed mode: 3.3V signaling, Frequency up to 25 MHz, up to 12.5 MB/sec; (2) High Speed mode: 3.3V signaling, Frequency up to 50 MHz, up to 25 MB/sec". 12.5 MB/s at 25 MHz needs all four lines: 4 bits a clock. Wide bus selection itself (ACMD6) is in 4.3.1, p. 52, and has no speed condition |
 | <a id="ref-hs"></a>PLS §4.3.11 | 4.3.11 "High-Speed Mode (25 MB/sec interface speed)", p. 89 | High Speed: "the clock rate is increased to 50 MHz", entered with CMD6 |
 | <a id="ref-od"></a>PLS §4.2.1, §4.4 | 4.2.1 "Card Reset", p. 41; 4.4 "Clock Control", p. 92 | Identification runs at the clock rate `fOD` (4.2, which points to 6.6.6). The Simplified Specification leaves out 6.6.6's parameter table, so the 400 kHz value appears only in passing: cards start "with a default driver strength with 400KHz clock frequency" (4.2.1), and during ACMD41 the host clocks the card at "100 KHz-400 KHz" (4.4) |
 
@@ -515,12 +517,14 @@ Card timings above are from the SD Association's **SD Specifications Part 1, Phy
   card ([section 6.1](#61-on-a-real-pi-3a)) and keep the console log.
   Try at least one SDXC card (over 32 GB) for findings 1 and 4, and a
   second run with `RPI_CORE_FREQ=400` for finding 3.
-- [ ] **Widen the bus on cards without High Speed.** Zephyr's SD stack
+- [x] **Widen the bus on cards without High Speed.** Zephyr's SD stack
   (`sdmmc_init_hs()` in `subsys/sd/sdmmc.c`, the same in Zephyr main)
-  switches to 4 bits only after switching to High Speed, so a Default
-  Speed card stays 1 bit wide at a quarter of the speed (ninth run, 2 GB
-  card). Fix: set the bus width before the High Speed checks, as Linux
-  does. A Zephyr SD stack fix, not the driver's.
+  switched to 4 bits only after switching to High Speed, so a Default
+  Speed card stayed 1 bit wide at a quarter of the speed (ninth run, 2 GB
+  card). Fixed by `sdmmc-4bit-without-hs.patch`, tested by
+  `tests/sd_bus_width`. A Zephyr SD stack fix, not the driver's.
+- [ ] **Rerun the 2 GB card with that fix**, with the test image written
+  to it, to see 4 bits on the Pi and run the write tests.
 - [ ] **Read FAT16 in the qualification harness**, so a card with its
   factory FAT16 partition (most cards of 2 GB or less) gets its boot
   partition checked; or write the test image to such cards, as

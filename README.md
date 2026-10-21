@@ -26,8 +26,9 @@ results and fixes that can be offered to the PR.
   3.7 GB and read 4.2 GB. Reads reach 23.6 MB/s, writes 18.7 MB/s.
   Without the fix, every test that repeated multi-block reads failed.
 - **A 2 GB card** (ninth run, reads only): reads all good, but Zephyr's SD
-  stack left the bus 1 bit wide (3.1 MB/s), because it only widens the bus
-  for High Speed cards. Not the driver's bug; not fixed yet.
+  stack left the bus 1 bit wide (3.1 MB/s), because it only widened the
+  bus for High Speed cards. Not the driver's bug; fixed here
+  (`sdmmc-4bit-without-hs.patch`), not yet rerun on the Pi.
 - **Zephyr's own suites** on the same Pi and card: `sdhc` 5/5,
   `disk_access` 3/3.
 - **Not posted upstream** yet ([UPSTREAM.md](docs/UPSTREAM.md)).
@@ -40,10 +41,11 @@ results and fixes that can be offered to the PR.
 | `tests/sdhost_hw` | Reproduces the review's findings one by one on a real Pi 3A+ |
 | `tests/sdhost_review` | The driver against a register model of the controller (`native_sim`): findings 1-10 and 12, and the fix |
 | `tests/sd_bounds` | Zephyr's SD stack range checks against a fake controller (`native_sim`), including ranges that wrap |
+| `tests/sd_bus_width` | Zephyr's SD stack initialising a fake card (`native_sim`): 4 bits with or without High Speed |
 | `tests/hal_bcm2835` | Unit tests of the HAL headers |
 | `hal/include/hal` | Register access for the tests (SDHost, GPIO) |
 | `boards/raspberrypi/rpi_3a_plus` | The Pi 3A+ board, with the SDHost node |
-| `zephyr/patches.yml`, `zephyr/patches/` | PR #110196 and the fixes (the driver, the firmware mailbox and the SD stack's range check), applied by `west patch apply` |
+| `zephyr/patches.yml`, `zephyr/patches/` | PR #110196 and the fixes (the driver, the firmware mailbox, and the SD stack's range check and bus width), applied by `west patch apply` |
 | `qemu/`, `scripts/run-qemu.sh` | Running the tests on QEMU's `raspi3ap` |
 | `docs/` | [TESTING.md](docs/TESTING.md), [UPSTREAM.md](docs/UPSTREAM.md), [CODING.md](docs/CODING.md), the [review](docs/reviews/pr110196-sdhost-review.md) and hardware logs |
 
