@@ -20,10 +20,14 @@ results and fixes that can be offered to the PR.
   2026, [log](docs/reviews/logs/2026-10-21-sd-qual-pi3a-sdxc64-run8-corrected.log)):
   every qualification test passed except finding 4 (a 314 ms data timeout)
   and a wrapping bounds check in Zephyr's SD stack, since fixed here
-  (`sd-ops-bounds-overflow.patch`, not yet run on the Pi).
+  (`sd-ops-bounds-overflow.patch`; it passed on the Pi in the
+  [ninth run](docs/reviews/pr110196-sdhost-review.md#7-results-on-a-real-pi-3a)).
   No run-ons in over 100,000 multi-block reads; a 10-minute soak wrote
   3.7 GB and read 4.2 GB. Reads reach 23.6 MB/s, writes 18.7 MB/s.
   Without the fix, every test that repeated multi-block reads failed.
+- **A 2 GB card** (ninth run, reads only): reads all good, but Zephyr's SD
+  stack left the bus 1 bit wide (3.1 MB/s), because it only widens the bus
+  for High Speed cards. Not the driver's bug; not fixed yet.
 - **Zephyr's own suites** on the same Pi and card: `sdhc` 5/5,
   `disk_access` 3/3.
 - **Not posted upstream** yet ([UPSTREAM.md](docs/UPSTREAM.md)).

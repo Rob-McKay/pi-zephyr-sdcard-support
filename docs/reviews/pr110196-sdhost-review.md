@@ -445,6 +445,27 @@ So far finding 12 has struck in all nine tests that repeat multi-block reads, ac
 | Erase | 8 MB in 13 ms, verified |
 | Concurrency | All data right, 19.1 s; the lower-priority thread ran 0 times (finding 6) |
 
+**Ninth run, with the SD stack's range-check fix** (`sd-ops-bounds-overflow.patch`), 21 October 2026, on two cards.
+
+*The same 64 GB SDXC card* ([log](logs/2026-10-21-sd-qual-pi3a-sdxc64-run9.log)): as the eighth run, and now `test_4_wrapping_range_refused` passes on hardware: the read of block 0xffffffff is refused before it reaches the card. Only finding 4's check failed (SDTOUT 314 ms at 50 MHz).
+
+| Area | Result |
+|---|---|
+| Recoveries | None |
+| Soak | 600 s: 48,038 writes (3.6 GB), 55,554 reads (4.3 GB), 3,158 erases; final verify passed |
+| Speed | Sequential reads to 23.5 MB/s, writes to 20.9 MB/s; random 4 KB 1,218 reads/s, 603 writes/s (max latency 3.6 / 63.7 ms) |
+| Concurrency | All data right, 22.0 s; the lower-priority thread ran 0 times (finding 6) |
+
+*A 2 GB card* (3,862,528 blocks; at that size most likely standard capacity, SDSC, which is addressed in bytes rather than blocks) ([log](logs/2026-10-21-sd-qual-pi3a-sd2gb-run9.log)). Its own FAT16 partition (type 0x0e) fills the card, with the boot files copied onto it rather than the test image written, so the harness found no FAT32 boot partition and no free space for a scratch area: the write tests were skipped, and the boot-partition checks failed because the harness reads FAT32 only.
+
+| Area | Result |
+|---|---|
+| **Bus width** | **Left at 1 bit**, at 25 MHz (Default Speed), so reads top out at 3.1 MB/s instead of about 12. Not the driver's bug: Zephyr's SD stack (`subsys/sd/sdmmc.c`, `sdmmc_init_hs()`) only switches to 4 bits after switching to High Speed, and returns early for a card without High Speed (or older than SD 1.10). 4-bit transfers are mandatory for SD memory cards and independent of the bus speed |
+| Reads | 1,000 multi-block reads (127,185 blocks) and the whole address range sampled, all good, no run-ons and no recoveries: finding 12's fix works on a second card, and on the byte-addressed path |
+| Bounds | Past-the-end and wrapping ranges refused, as on the SDXC card |
+| Data timeout | SDTOUT 629 ms at 25 MHz, so finding 4's check passed: the same register value lasts twice as long at half the clock |
+| Speed | Sequential reads to 3.1 MB/s; random 4 KB reads 543/s (max latency 2.2 ms) |
+
 **Zephyr's own suites**, as the PR reports them (`make sd-zephyr-hw-test`), same Pi and card ([log](logs/2026-10-20-zephyr-sdhc-disk_access-pi3a-sdxc64.log)):
 
 | Suite | Result |
@@ -494,6 +515,16 @@ Card timings above are from the SD Association's **SD Specifications Part 1, Phy
   card ([section 6.1](#61-on-a-real-pi-3a)) and keep the console log.
   Try at least one SDXC card (over 32 GB) for findings 1 and 4, and a
   second run with `RPI_CORE_FREQ=400` for finding 3.
+- [ ] **Widen the bus on cards without High Speed.** Zephyr's SD stack
+  (`sdmmc_init_hs()` in `subsys/sd/sdmmc.c`, the same in Zephyr main)
+  switches to 4 bits only after switching to High Speed, so a Default
+  Speed card stays 1 bit wide at a quarter of the speed (ninth run, 2 GB
+  card). Fix: set the bus width before the High Speed checks, as Linux
+  does. A Zephyr SD stack fix, not the driver's.
+- [ ] **Read FAT16 in the qualification harness**, so a card with its
+  factory FAT16 partition (most cards of 2 GB or less) gets its boot
+  partition checked; or write the test image to such cards, as
+  [TESTING.md](../TESTING.md) says.
 - [x] **Run Zephyr's suites as the PR reports them**, on the Pi 3A+
   (`make sd-zephyr-hw-test`): 5/5 and 3/3, as the PR reports on a Zero 2 W
   ([section 7](#7-results-on-a-real-pi-3a)).
