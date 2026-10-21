@@ -1,0 +1,146 @@
+/*
+ * Raspberry Pi 3 Model A+ (BCM2837B0).
+ *
+ * The BCM2837B0 is a respin of the Pi 3 Model B's BCM2837, and the Zero
+ * 2 W's RP3A0 carries the same family's BCM2710A1 die. All three have the
+ * same peripheral map, so this board reuses Zephyr's bcm2710 SoC support.
+ * Derived from Zephyr's rpi_zero_2w board.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <broadcom/bcm2710.dtsi>
+#include <broadcom/bcm2711-pinctrl.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/mbox/brcm-bcm2711-mbox.h>
+#include <zephyr/dt-bindings/power/rpi_bcm283x_power.h>
+
+/ {
+	model = "Raspberry Pi 3 Model A+";
+	compatible = "raspberrypi,3-model-a-plus", "brcm,bcm2710";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &dram0;
+		zephyr,entropy = &rng;
+	};
+
+	/*
+	 * DRAM window the image is linked into; the base must match the
+	 * kernel_address= line in config.txt. The board has 512 MB; the
+	 * upper part is left to the VideoCore GPU split and firmware.
+	 */
+	dram0: memory@200000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x200000 DT_SIZE_M(256)>;
+	};
+
+	aliases {
+		die-temp0 = &vc_thermal;
+		sdhc0 = &sdhost;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* Shared buffer for the VideoCore firmware property channel. */
+		vc_mem: memory@10200000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x10200000 DT_SIZE_K(64)>;
+			zephyr,memory-region = "VC_SHARED";
+		};
+	};
+
+	firmware: firmware {
+		compatible = "raspberrypi,bcm283x-firmware";
+		mboxes = <&mbox0 BCM2711_MBOX0_CH_ARM_TO_VC>;
+		mbox-names = "vc";
+		shared-memory = <&vc_mem>;
+
+		vc_thermal: vc-thermal {
+			compatible = "raspberrypi,bcm283x-vc-thermal";
+			status = "okay";
+		};
+	};
+
+	power-domains {
+		usb_hcd: power-domain-usb {
+			compatible = "raspberrypi,bcm283x-power";
+			firmware = <&firmware>;
+			#power-domain-cells = <0>;
+			power-domain-id = <RPI_POWER_DOMAIN_USB_HCD>;
+		};
+	};
+
+	soc {
+		/*
+		 * Bus masters such as the USB controller see SDRAM through the
+		 * VideoCore's L2-uncached alias at 0xc0000000.
+		 */
+		dma-ranges = <0xc0000000 0x0 0x3f000000>;
+
+		/*
+		 * Synopsys DWC2 USB 2.0 OTG controller, wired straight to the
+		 * 3A+'s single USB-A port (no on-board hub or Ethernet chip, unlike
+		 * the 3B). Same IP and settings as usb0 in Zephyr's bcm2711.dtsi.
+		 */
+		usb0: usb@3f980000 {
+			compatible = "brcm,bcm2835-usb", "snps,dwc2";
+			reg = <0x3f980000 0x10000>;
+			interrupts = <BCM2835_IRQ_USB IRQ_TYPE_LEVEL 0>;
+			num-in-eps = <8>;
+			num-out-eps = <8>;
+			ghwcfg1 = <0x00000000>;
+			ghwcfg2 = <0x228ddd50>;
+			ghwcfg4 = <0x1ff00020>;
+			g-rx-fifo-size = <788>;
+			g-np-tx-fifo-size = <32>;
+			g-tx-fifo-size = <512 512 512 512 512 256 256>;
+			status = "disabled";
+		};
+	};
+};
+
+/* 40-pin header pins 8/10 (GPIO 14/15). Needs enable_uart=1 in config.txt. */
+&uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart1_gpio14>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
+/* 40-pin header pins 3/5 (GPIO 2/3), with on-board 1.8k pull-ups. */
+&i2c1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c1_gpio2>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+/*
+ * microSD slot: the legacy SDHost controller on GPIO 48-53 ALT0 (driver
+ * from Zephyr PR #110196, applied by zephyr/patches.yml). The GPU firmware
+ * boots from the card; once Zephyr runs, it is disk "SD". The driver is
+ * only built when an application enables CONFIG_SDHC.
+ */
+&sdhost {
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdhost_gpio48>;
+	status = "okay";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+	};
+};
+
+/* USB host on the USB-A port (enabled when the app turns on the USB host stack). */
+zephyr_uhc0: &usb0 {
+	status = "okay";
+	power-domains = <&usb_hcd>;
+};

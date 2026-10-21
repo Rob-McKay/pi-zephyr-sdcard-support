@@ -1,0 +1,206 @@
+diff --git a/drivers/sdhc/sdhc_bcm2835_sdhost.c b/drivers/sdhc/sdhc_bcm2835_sdhost.c
+index a9adc36..3881c19 100644
+--- a/drivers/sdhc/sdhc_bcm2835_sdhost.c
++++ b/drivers/sdhc/sdhc_bcm2835_sdhost.c
+@@ -298,9 +298,11 @@ static int sdhost_wait_xfer_complete(const struct device *dev, bool is_read,
+  * FIFO one block at a time. SDEDM bits 8:4 give the fill level; when
+  * the FIFO is not ready we check FSM is still in an active data
+  * state and either surface a SDHSTS error or hit the outer deadline.
++ * An open-ended read (CMD18) returns as soon as its last word is in:
++ * sdhost_finish_open_read() ends it.
+  */
+ static int sdhost_pio_xfer(const struct device *dev, struct sdhc_data *data,
+-			   bool is_read)
++			   bool is_read, bool open_read)
+ {
+ 	uintptr_t base = DEVICE_MMIO_GET(dev);
+ 	uint8_t *buf = (uint8_t *)data->data;
+@@ -393,6 +395,11 @@ static int sdhost_pio_xfer(const struct device *dev, struct sdhc_data *data,
+ 		blocks_left--;
+ 	}
+ 
++	if (open_read) {
++		data->bytes_xfered = (size_t)data->blocks * data->block_size;
++		return 0;
++	}
++
+ 	int ret = sdhost_wait_xfer_complete(dev, is_read,
+ 			data->timeout_ms ? data->timeout_ms : 500);
+ 	if (ret != 0) {
+@@ -494,15 +501,20 @@ static int sdhc_bcm2835_sdhost_set_io(const struct device *dev,
+  * an R1b busy response, so SDCMD_BUSYWAIT holds the command active
+  * until the card releases DAT0, and SDHSTS_BUSY_IRPT is cleared after.
+  */
++static void sdhost_issue_stop(uintptr_t base)
++{
++	sys_write32(0, base + SDARG);
++	sys_write32((SD_STOP_TRANSMISSION & SDCMD_CMD_MASK) |
++		    SDCMD_BUSYWAIT | SDCMD_NEW_FLAG, base + SDCMD);
++}
++
+ static int sdhost_send_stop(const struct device *dev)
+ {
+ 	uintptr_t base = DEVICE_MMIO_GET(dev);
+ 	uint32_t sdcmd;
+ 	int ret;
+ 
+-	sys_write32(0, base + SDARG);
+-	sys_write32((SD_STOP_TRANSMISSION & SDCMD_CMD_MASK) |
+-		    SDCMD_BUSYWAIT | SDCMD_NEW_FLAG, base + SDCMD);
++	sdhost_issue_stop(base);
+ 
+ 	ret = sdhost_wait_cmd_done(dev, SDHOST_CMD_TIMEOUT_MS);
+ 	if (ret != 0) {
+@@ -524,6 +536,124 @@ static int sdhost_send_stop(const struct device *dev)
+ 	return 0;
+ }
+ 
++/* Stop an open-ended read (CMD18) and leave the controller idle, with
++ * the card back in the transfer state and the FIFO empty.
++ *
++ * If the data FSM has run on into a block nobody asked for, the FIFO
++ * fills, and while it is full the controller stops the bus clock: CMD12
++ * can't complete and the FSM never settles, so neither can be waited for
++ * on its own. So CMD12 is issued at once and the FIFO is emptied, the
++ * words discarded, until both the command and the data phase are done.
++ * A block the stop cut short ends with the controller's data timeout;
++ * that status is cleared with the rest.
++ *
++ * Also used after a failed read, so the next request finds the
++ * controller idle.
++ */
++static int sdhost_stop_open_read(const struct device *dev, int timeout_ms)
++{
++	uintptr_t base = DEVICE_MMIO_GET(dev);
++	int64_t start = k_uptime_get();
++	int64_t deadline = start + timeout_ms;
++	uint32_t discarded = 0;
++	uint32_t sdcmd;
++	uint32_t sdhsts;
++	uint32_t edm;
++	bool cmd_done = false;
++	bool data_done = false;
++
++	sdhost_issue_stop(base);
++	while (!cmd_done || !data_done) {
++		edm = sys_read32(base + SDEDM);
++
++		uint32_t fsm = edm & SDEDM_FSM_MASK;
++		uint32_t level = (edm >> 4) & 0x1f;
++
++		for (uint32_t i = 0; i < level; i++) {
++			(void)sys_read32(base + SDDATA);
++		}
++		discarded += level;
++		if (fsm == SDEDM_FSM_READWAIT) {
++			sys_write32(edm | SDEDM_FORCE_DATA_MODE, base + SDEDM);
++		}
++		data_done = level == 0 &&
++			    (fsm == SDEDM_FSM_IDENTMODE || fsm == SDEDM_FSM_DATAMODE ||
++			     fsm == SDEDM_FSM_READWAIT);
++		cmd_done = !(sys_read32(base + SDCMD) & SDCMD_NEW_FLAG);
++		if (k_uptime_get() > deadline) {
++			LOG_ERR("%s CMD12 after a read: %s still busy, edm 0x%08x", dev->name,
++				cmd_done ? "data phase" : "command", edm);
++			return -ETIMEDOUT;
++		}
++	}
++	if (discarded != 0) {
++		LOG_WRN("%s read ran on past its last block: stopped, %u words discarded, "
++			"%lld ms", dev->name, discarded, k_uptime_get() - start);
++	}
++
++	sdcmd = sys_read32(base + SDCMD);
++	sdhsts = sys_read32(base + SDHSTS);
++	sys_write32(sdhsts & SDHSTS_W1C_ALL, base + SDHSTS);
++	if (sdcmd & SDCMD_FAIL_FLAG) {
++		LOG_ERR("%s CMD12 stop failed sdhsts=0x%08x sdcmd=0x%08x",
++			dev->name, sdhsts, sdcmd);
++		return -EIO;
++	}
++	return 0;
++}
++
++/* End an open-ended read (CMD18) whose last requested word is in.
++ *
++ * The card doesn't wait for CMD12: once a block is sent it starts the
++ * next. Caught in READWAIT between blocks, the FSM is moved on with
++ * FORCE_DATA_MODE as before; but an interrupt in that window is enough
++ * to miss it, and the FSM runs on into the next block (words in the
++ * FIFO). Either way, the requested blocks' CRCs have been checked by
++ * then, so their status is read first, and then the card is stopped and
++ * the FIFO emptied.
++ */
++static int sdhost_finish_open_read(const struct device *dev, int timeout_ms)
++{
++	uintptr_t base = DEVICE_MMIO_GET(dev);
++	int64_t deadline = k_uptime_get() + timeout_ms;
++	uint32_t edm;
++	uint32_t errors;
++	bool stuck = false;
++	int ret;
++
++	for (;;) {
++		edm = sys_read32(base + SDEDM);
++
++		uint32_t fsm = edm & SDEDM_FSM_MASK;
++
++		/* Words in the FIFO now belong to a block nobody asked for.
++		 * READDATA alone doesn't: the FSM stays there a moment after
++		 * the last word, while that block's CRC arrives and is checked.
++		 */
++		if (((edm >> 4) & 0x1f) != 0) {
++			break;
++		}
++		if (fsm == SDEDM_FSM_IDENTMODE || fsm == SDEDM_FSM_DATAMODE ||
++		    fsm == SDEDM_FSM_READWAIT) {
++			break;
++		}
++		if (k_uptime_get() > deadline) {
++			LOG_ERR("data FSM still busy after read, edm 0x%08x", edm);
++			stuck = true;
++			break;
++		}
++	}
++
++	errors = sys_read32(base + SDHSTS) &
++		 (SDHSTS_CRC16_ERROR | SDHSTS_CRC7_ERROR | SDHSTS_FIFO_ERROR);
++	ret = sdhost_stop_open_read(dev, timeout_ms);
++	if (errors != 0) {
++		LOG_ERR("PIO read post-xfer error sdhsts=0x%08x", errors);
++		return -EILSEQ;
++	}
++	return stuck ? -ETIMEDOUT : ret;
++}
++
+ static int sdhc_bcm2835_sdhost_request(const struct device *dev,
+ 				       struct sdhc_command *cmd,
+ 				       struct sdhc_data *data)
+@@ -677,13 +807,24 @@ static int sdhc_bcm2835_sdhost_request(const struct device *dev,
+ 	}
+ 
+ 	if (data != NULL) {
+-		ret = sdhost_pio_xfer(dev, data, data_is_read);
++		bool open_read = cmd->opcode == SD_READ_MULTIPLE_BLOCK;
++		int data_timeout_ms = data->timeout_ms ? data->timeout_ms : 500;
++
++		ret = sdhost_pio_xfer(dev, data, data_is_read, open_read);
+ 		if (ret != 0) {
++			if (open_read) {
++				/* Stop the card and empty the FIFO, so the next
++				 * request finds them idle.
++				 */
++				(void)sdhost_stop_open_read(dev, data_timeout_ms);
++			}
+ 			return ret;
+ 		}
+ 
+-		if (cmd->opcode == SD_READ_MULTIPLE_BLOCK ||
+-		    cmd->opcode == SD_WRITE_MULTIPLE_BLOCK) {
++		if (open_read) {
++			return sdhost_finish_open_read(dev, data_timeout_ms);
++		}
++		if (cmd->opcode == SD_WRITE_MULTIPLE_BLOCK) {
+ 			ret = sdhost_send_stop(dev);
+ 			if (ret != 0) {
+ 				return ret;

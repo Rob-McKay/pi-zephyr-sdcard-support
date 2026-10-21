@@ -1,0 +1,46 @@
+# clang-tidy configuration for this repository's own code, run on every
+# compile by the build (cmake/strict.cmake, scripts/clang-tidy-cross.py).
+# Any finding fails the build. docs/CODING.md explains the choices.
+#
+# Disabled, as style preferences or impractical with Zephyr:
+#   readability-identifier-length     i, n, c, ... are idiomatic in C
+#   readability-magic-numbers         register bits and protocol constants
+#   misc-include-cleaner              Zephyr's headers are aggregated
+#   readability-function-size         counts Zephyr's macro expansions
+#   bugprone-easily-swappable-parameters  flags most two-int functions
+#
+# Disabled, as they ask for the C11 Annex K functions (memcpy_s, ...), which
+# neither glibc nor picolibc provides; -D_FORTIFY_SOURCE=2 checks the
+# buffer sizes instead (cmake/strict.cmake):
+#   clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling
+#   bugprone-unsafe-functions' default list, and its aliases cert-msc24-c
+#   and cert-msc33-c
+#   clang-analyzer-security.insecureAPI.strcpy  (strcpy is banned below)
+#
+# Banned functions: bugprone-unsafe-functions with only the CustomFunctions
+# list below (clang-tidy has no modernize-replace-disallowed-functions).
+# Each entry is "regex,alternative,reason"; it needs clang-tidy 20 or later.
+Checks: >
+  bugprone-*, cert-*, clang-analyzer-*, misc-*, performance-*, portability-*, readability-*,
+  -readability-identifier-length, -readability-magic-numbers, -misc-include-cleaner,
+  -readability-function-size, -bugprone-easily-swappable-parameters,
+  -cert-msc24-c, -cert-msc33-c,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
+  -clang-analyzer-security.insecureAPI.strcpy
+WarningsAsErrors: '*'
+# The header filter (this repository's headers) is set by the wrapper.
+CheckOptions:
+  readability-function-cognitive-complexity.Threshold: 25
+  readability-function-cognitive-complexity.IgnoreMacros: true
+  # In C (before C23) !, && and || yield int: they are not conversions to fix.
+  readability-implicit-bool-conversion.AllowLogicalOperatorConversion: true
+  # A positive literal operand such as 0x7f is not a signed-arithmetic hazard.
+  bugprone-signed-bitwise.IgnorePositiveIntegerLiterals: true
+  bugprone-unsafe-functions.ReportDefaultFunctions: false
+  bugprone-unsafe-functions.ReportMoreUnsafeFunctions: false
+  bugprone-unsafe-functions.CustomFunctions: >
+    ^strcpy$,strncpy (remember to manually null-terminate if the buffer limit is reached),is banned;
+    ^strcat$,strncat,is banned;
+    ^sprintf$,snprintf,is banned;
+    ^vsprintf$,vsnprintf,is banned;
+    ^gets$,fgets,is banned

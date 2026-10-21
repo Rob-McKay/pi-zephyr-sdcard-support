@@ -1,0 +1,7 @@
+tests:
+  sdcard_hw.qualification:
+    platform_allow: rpi_3a_plus
+    tags: sdhc disk
+    harness: ztest
+    # Needs a Pi 3A+ and a spare SD card: see docs/TESTING.md.
+    build_only: true

@@ -1,0 +1,6 @@
+board:
+  name: rpi_3a_plus
+  full_name: Raspberry Pi 3 Model A+
+  vendor: raspberrypi
+  socs:
+  - name: bcm2710

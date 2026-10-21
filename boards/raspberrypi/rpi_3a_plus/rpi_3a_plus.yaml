@@ -1,0 +1,13 @@
+identifier: rpi_3a_plus
+name: Raspberry Pi 3 Model A+
+type: mcu
+arch: arm64
+ram: 262144
+toolchain:
+  - zephyr
+  - cross-compile
+supported:
+  - gpio
+  - i2c
+  - sdhc
+  - uart

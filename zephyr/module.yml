@@ -1,0 +1,5 @@
+name: pi-zephyr-sdcard-support
+build:
+  cmake: .
+  settings:
+    board_root: .

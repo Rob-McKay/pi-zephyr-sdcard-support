@@ -1,0 +1,1188 @@
+
+
+
+
+Raspberry Pi Bootcode
+Read File: config.txt, 455
+Read File: start_cd.elf, 844380 (bytes)
+Read File: fixup_cd.dat, 3280 (bytes)
+<inf> sdhc_bcm2835_sdhost: mmc@3f202000 init ok (clk_in=250000000 Hz, bus=4-bit, SDEDM=0x00010800 [FSM=0x0 rd_thr=4 wr_thr=4])
+*** Booting Zephyr OS build a915b2f12675 ***
+Running TESTSUITE sdcard_1_identify
+===================================================================
+scratch area lies in free clusters 1945957-1948004 of FAT32 partition at block 32768
+card: 124735488 blocks of 512 bytes (60906 MB)
+bus: 4-bit, core clock 250000000 Hz / (SDCDIV 3 + 2) = 50000000 Hz
+scratch area: blocks 124604416-124735487 (64 MB, written by these tests)
+random seed: 12659755 (CONFIG_SDCARD_HW_SEED repeats it)
+START - test_bus_4bit
+ PASS - test_bus_4bit in 0.003 seconds
+===================================================================
+START - test_bus_clock_in_spec
+SD bus clock 50000000 Hz
+ PASS - test_bus_clock_in_spec in 0.004 seconds
+===================================================================
+START - test_data_timeout_covers_busy
+SDTOUT 15728640 cycles = 314 ms at 50000000 Hz
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_1_identify.c:74: sdcard_1_identify_test_data_timeout_covers_busy: (ms >= 500U is false)
+data timeout 314 ms < 500 ms (review finding 4)
+ FAIL - test_data_timeout_covers_busy in 0.023 seconds
+===================================================================
+START - test_disk_ready
+ PASS - test_disk_ready in 0.003 seconds
+===================================================================
+START - test_ioctls
+ PASS - test_ioctls in 0.003 seconds
+===================================================================
+TESTSUITE sdcard_1_identify failed.
+Running TESTSUITE sdcard_2_bootfs
+===================================================================
+boot partition at block 32768: 64 blocks a cluster, 7 files
+START - test_1_layout
+ PASS - test_1_layout in 0.003 seconds
+===================================================================
+START - test_2_config_txt
+ PASS - test_2_config_txt in 0.005 seconds
+===================================================================
+START - test_3_files_read_consistently
+BOOTCODE.BIN    52624 bytes  crc32 53c9b136  (38 ms for the 3 reads)
+CONFIG.TXT        455 bytes  crc32 931a2e15  (18 ms for the 3 reads)
+FIXUP_CD.DAT     3280 bytes  crc32 5aec4a9b  (20 ms for the 3 reads)
+LICENC~2.BRO     1594 bytes  crc32 ac43b6db  (71 ms for the 3 reads)
+START_CD.ELF   844380 bytes  crc32 0a4e81da  (514 ms for the 3 reads)
+<err> sdhc_bcm2835_sdhost: data FSM still busy after read, edm 0x00010902
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_2_bootfs.c:360: sdcard_2_bootfs_test_3_files_read_consistently: (file_crc(&files[i], (enum read_mode)m, &crc[m], NULL, 0) is non-zero)
+ZEPHYR.BIN, mode 2
+ FAIL - test_3_files_read_consistently in 12.621 seconds
+===================================================================
+START - test_4_image_crc_matches_host
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD17 arg=0x00000000: NEW_FLAG never cleared
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+RECOVERY: the card did not answer correctly after the previous test; power cycling it through the disk API
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<wrn> sd: Card busy when powering off
+ PASS - test_4_image_crc_matches_host in 11.918 seconds
+===================================================================
+START - test_5_multi_block_read_stress
+1000 multi-block reads, 126466 blocks, 20607 kB/s
+ PASS - test_5_multi_block_read_stress in 3.623 seconds
+===================================================================
+TESTSUITE sdcard_2_bootfs failed.
+Running TESTSUITE sdcard_3_integrity
+===================================================================
+START - test_1_patterns
+ PASS - test_1_patterns in 0.017 seconds
+===================================================================
+START - test_2_transfer_sizes
+ PASS - test_2_transfer_sizes in 0.522 seconds
+===================================================================
+START - test_3_chunking
+ PASS - test_3_chunking in 0.335 seconds
+===================================================================
+START - test_4_misaligned_buffers
+ PASS - test_4_misaligned_buffers in 0.023 seconds
+===================================================================
+START - test_5_neighbours_untouched
+ PASS - test_5_neighbours_untouched in 0.035 seconds
+===================================================================
+START - test_6_overwrite
+<err> sdhc_bcm2835_sdhost: data FSM still busy after read, edm 0x00010902
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/common.c:129: sdq_write_verify: (disk_access_read(SDQ_DISK, sdq_rbuf, lba, blocks) is non-zero)
+read 124619776+32
+ FAIL - test_6_overwrite in 10.043 seconds
+===================================================================
+START - test_7_address_bits
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD17 arg=0x00000000: NEW_FLAG never cleared
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+RECOVERY: the card did not answer correctly after the previous test; power cycling it through the disk API
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<wrn> sd: Card busy when powering off
+ PASS - test_7_address_bits in 11.707 seconds
+===================================================================
+START - test_8_random_mix
+<err> sdhc_bcm2835_sdhost: data FSM still busy after read, edm 0x00010902
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_3_integrity.c:267: check_random_range: disk_access_read(SDQ_DISK, sdq_rbuf, base + first, blocks) is non-zero
+
+ FAIL - test_8_random_mix in 12.710 seconds
+===================================================================
+TESTSUITE sdcard_3_integrity failed.
+Running TESTSUITE sdcard_4_bounds
+===================================================================
+START - test_1_first_blocks
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD17 arg=0x00000000: NEW_FLAG never cleared
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+RECOVERY: the card did not answer correctly after the previous test; power cycling it through the disk API
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<wrn> sd: Card busy when powering off
+<err> sdhc_bcm2835_sdhost: data FSM still busy after read, edm 0x00010902
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_4_bounds.c:16: sdcard_4_bounds_test_1_first_blocks: disk_access_read(SDQ_DISK, sdq_rbuf, 0, 64) is non-zero
+
+ FAIL - test_1_first_blocks in 21.717 seconds
+===================================================================
+START - test_2_last_blocks
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD17 arg=0x00000000: NEW_FLAG never cleared
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+RECOVERY: the card did not answer correctly after the previous test; power cycling it through the disk API
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<wrn> sd: Card busy when powering off
+ PASS - test_2_last_blocks in 11.690 seconds
+===================================================================
+START - test_3_past_the_end_refused
+ PASS - test_3_past_the_end_refused in 0.003 seconds
+===================================================================
+START - test_4_wrapping_range_refused
+<err> sdhc_bcm2835_sdhost: PIO r: sdhsts=0x00000080 fsm=0x1 b=1 w=128
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_4_bounds.c:66: sdcard_4_bounds_test_4_wrapping_range_refused: (ret not equal to -EINVAL)
+read of block 0xffffffff went to the card (-116): the SD stack's bounds check wrapped
+ PASS - test_4_wrapping_range_refused in 0.353 seconds
+===================================================================
+START - test_5_whole_range_sampled
+ PASS - test_5_whole_range_sampled in 24.634 seconds
+===================================================================
+TESTSUITE sdcard_4_bounds failed.
+Running TESTSUITE sdcard_5_erase
+===================================================================
+START - test_1_small_erase_exact
+erased blocks read as 0x00
+<err> sdhc_bcm2835_sdhost: data FSM still busy after read, edm 0x00010902
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_5_erase.c:53: sdcard_5_erase_test_1_small_erase_exact: disk_access_read(SDQ_DISK, sdq_rbuf, lba, 64) is non-zero
+
+ FAIL - test_1_small_erase_exact in 10.050 seconds
+===================================================================
+START - test_2_single_block_then_write
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD17 arg=0x00000000: NEW_FLAG never cleared
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+RECOVERY: the card did not answer correctly after the previous test; power cycling it through the disk API
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<wrn> sd: Card busy when powering off
+ PASS - test_2_single_block_then_write in 11.692 seconds
+===================================================================
+START - test_3_large_erase
+8 MB erase: 0 after 5 ms
+<err> sdhc_bcm2835_sdhost: data FSM still busy after read, edm 0x00010902
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_5_erase.c:30: expect_erased: disk_access_read(SDQ_DISK, sdq_rbuf, lba, blocks) is non-zero
+
+ FAIL - test_3_large_erase in 10.477 seconds
+===================================================================
+TESTSUITE sdcard_5_erase failed.
+Running TESTSUITE sdcard_6_perf
+===================================================================
+START - test_1_sequential_read
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD17 arg=0x00000000: NEW_FLAG never cleared
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+RECOVERY: the card did not answer correctly after the previous test; power cycling it through the disk API
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<wrn> sd: Card busy when powering off
+sequential read, from block 0:
+     1 blocks/request:   1929 kB/s
+<err> sdhc_bcm2835_sdhost: data FSM still busy after read, edm 0x00010902
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_6_perf.c:41: sequential: (ret is non-zero)
+read 128+8
+ FAIL - test_1_sequential_read in 22.264 seconds
+===================================================================
+START - test_2_sequential_write
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD17 arg=0x00000000: NEW_FLAG never cleared
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+RECOVERY: the card did not answer correctly after the previous test; power cycling it through the disk API
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<wrn> sd: Card busy when powering off
+sequential write, scratch area:
+     1 blocks/request:    560 kB/s
+     8 blocks/request:   3684 kB/s
+    64 blocks/request:  10346 kB/s
+<err> sdhc_bcm2835_sdhost: data FSM still busy after read, edm 0x00010902
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_6_perf.c:81: sdcard_6_perf_test_2_sequential_write: disk_access_read(SDQ_DISK, sdq_rbuf, lba + total - chunks[i], chunks[i]) is non-zero
+
+ FAIL - test_2_sequential_write in 26.689 seconds
+===================================================================
+START - test_3_random_read
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD17 arg=0x00000000: NEW_FLAG never cleared
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+RECOVERY: the card did not answer correctly after the previous test; power cycling it through the disk API
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<wrn> sd: Card busy when powering off
+<err> sdhc_bcm2835_sdhost: data FSM still busy after read, edm 0x00010902
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_6_perf.c:117: sdcard_6_perf_test_3_random_read: (disk_access_read(SDQ_DISK, sdq_rbuf, lba, 8) is non-zero)
+read 123275800
+ FAIL - test_3_random_read in 21.790 seconds
+===================================================================
+START - test_4_random_write
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD17 arg=0x00000000: NEW_FLAG never cleared
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+RECOVERY: the card did not answer correctly after the previous test; power cycling it through the disk API
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<wrn> sd: Card busy when powering off
+random 4 KB write: 500 ops, 556 ops/s, latency min 800 us, avg 1798 us, max 74800 us
+<err> sdhc_bcm2835_sdhost: data FSM still busy after read, edm 0x00010902
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_6_perf.c:158: sdcard_6_perf_test_4_random_write: disk_access_read(SDQ_DISK, sdq_rbuf, lbas[i], 8) is non-zero
+
+ FAIL - test_4_random_write in 22.654 seconds
+===================================================================
+TESTSUITE sdcard_6_perf failed.
+Running TESTSUITE sdcard_7_concurrency
+===================================================================
+START - test_1_writers_and_reader
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD17 arg=0x00000000: NEW_FLAG never cleared
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+RECOVERY: the card did not answer correctly after the previous test; power cycling it through the disk API
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<wrn> sd: Card busy when powering off
+<wrn> sd: Could not get SD card mut<wrn> sd: Coulex
+<err><wrn>d not get S sdhc_bcm2835 sd: Could D card mute_sdhost: datnot get SD x
+a FSM still bcard mutexusy after re[0m
+ad, edm 0x00010902
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+3 writers x 1 MB x 40 rounds and a reader: 10034 ms; a lower-priority thread ran 0 times in that time (10034 if never blocked)
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_7_concurrency.c:158: sdcard_7_concurrency_test_1_writers_and_reader: (writers[i].error is non-zero)
+writer 0: -16 (bad block 0)
+ FAIL - test_1_writers_and_reader in 21.747 seconds
+===================================================================
+TESTSUITE sdcard_7_concurrency failed.
+Running TESTSUITE sdcard_8_recovery
+===================================================================
+START - test_1_power_cycles
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD17 arg=0x00000000: NEW_FLAG never cleared
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+RECOVERY: the card did not answer correctly after the previous test; power cycling it through the disk API
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<wrn> sd: Card busy when powering off
+<err> sdhc_bcm2835_sdhost: data FSM still busy after read, edm 0x00010902
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_8_recovery.c:42: sdcard_8_recovery_test_1_power_cycles: (disk_access_read(SDQ_DISK, sdq_rbuf, lba, 64) is non-zero)
+cycle 7: read
+ FAIL - test_1_power_cycles in 22.073 seconds
+===================================================================
+START - test_2_write_then_power_off
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD17 arg=0x00000000: NEW_FLAG never cleared
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+RECOVERY: the card did not answer correctly after the previous test; power cycling it through the disk API
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<wrn> sd: Card busy when powering off
+<err> sdhc_bcm2835_sdhost: data FSM still busy after read, edm 0x00010902
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_8_recovery.c:60: sdcard_8_recovery_test_2_write_then_power_off: disk_access_read(SDQ_DISK, sdq_rbuf, lba, 64) is non-zero
+
+ FAIL - test_2_write_then_power_off in 21.765 seconds
+===================================================================
+START - test_3_unanswered_command
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD17 arg=0x00000000: NEW_FLAG never cleared
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+RECOVERY: the card did not answer correctly after the previous test; power cycling it through the disk API
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<wrn> sd: Card busy when powering off
+CID ioctl: -116 (CMD2 is not answered in transfer state)
+ PASS - test_3_unanswered_command in 11.690 seconds
+===================================================================
+TESTSUITE sdcard_8_recovery failed.
+Running TESTSUITE sdcard_9_soak
+===================================================================
+START - test_1_random_workload
+soak for 600 s over 64 MB
+<err> sdhc_bcm2835_sdhost: data FSM still busy after read, edm 0x00010902
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+operation read 124674243+35 failed: -116
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_9_soak.c:134: sdcard_9_soak_test_1_random_workload: (one_op(&s, gen) is non-zero)
+after 11 operations
+ FAIL - test_1_random_workload in 10.119 seconds
+===================================================================
+START - test_2_final_verify
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD17 arg=0x00000000: NEW_FLAG never cleared
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+RECOVERY: the card did not answer correctly after the previous test; power cycling it through the disk API
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<err> sdhc_bcm2835_sdhost: mmc@3f202000 CMD13: previous command never completed
+<wrn> sd: Card busy when powering off
+<err> sdhc_bcm2835_sdhost: data FSM still busy after read, edm 0x00010902
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_9_soak.c:152: sdcard_9_soak_test_2_final_verify: disk_access_read(SDQ_DISK, sdq_rbuf, sdq.scratch + b, SDQ_MAX_BLOCKS) is non-zero
+
+ FAIL - test_2_final_verify in 21.759 seconds
+===================================================================
+TESTSUITE sdcard_9_soak failed.
+Running TESTSUITE sdcard_zz_summary
+===================================================================
+START - test_no_recovery_needed
+recoveries needed during the run: 14, of which 0 failed
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_9_soak.c:167: sdcard_zz_summary_test_no_recovery_needed: (sdq.recoveries not equal to 0)
+the card needed recovering 14 times: see RECOVERY above
+ FAIL - test_no_recovery_needed in 0.023 seconds
+===================================================================
+TESTSUITE sdcard_zz_summary failed.
+
+------ TESTSUITE SUMMARY START ------
+
+SUITE FAIL -  80.00% [sdcard_1_identify]: pass = 4, fail = 1, skip = 0, total = 5 duration = 0.036 seconds
+ - PASS - [sdcard_1_identify.test_bus_4bit] duration = 0.003 seconds
+ - PASS - [sdcard_1_identify.test_bus_clock_in_spec] duration = 0.004 seconds
+ - FAIL - [sdcard_1_identify.test_data_timeout_covers_busy] duration = 0.023 seconds
+ - PASS - [sdcard_1_identify.test_disk_ready] duration = 0.003 seconds
+ - PASS - [sdcard_1_identify.test_ioctls] duration = 0.003 seconds
+
+SUITE FAIL -  80.00% [sdcard_2_bootfs]: pass = 4, fail = 1, skip = 0, total = 5 duration = 28.170 seconds
+ - PASS - [sdcard_2_bootfs.test_1_layout] duration = 0.003 seconds
+ - PASS - [sdcard_2_bootfs.test_2_config_txt] duration = 0.005 seconds
+ - FAIL - [sdcard_2_bootfs.test_3_files_read_consistently] duration = 12.621 seconds
+ - PASS - [sdcard_2_bootfs.test_4_image_crc_matches_host] duration = 11.918 seconds
+ - PASS - [sdcard_2_bootfs.test_5_multi_block_read_stress] duration = 3.623 seconds
+
+SUITE FAIL -  75.00% [sdcard_3_integrity]: pass = 6, fail = 2, skip = 0, total = 8 duration = 35.392 seconds
+ - PASS - [sdcard_3_integrity.test_1_patterns] duration = 0.017 seconds
+ - PASS - [sdcard_3_integrity.test_2_transfer_sizes] duration = 0.522 seconds
+ - PASS - [sdcard_3_integrity.test_3_chunking] duration = 0.335 seconds
+ - PASS - [sdcard_3_integrity.test_4_misaligned_buffers] duration = 0.023 seconds
+ - PASS - [sdcard_3_integrity.test_5_neighbours_untouched] duration = 0.035 seconds
+ - FAIL - [sdcard_3_integrity.test_6_overwrite] duration = 10.043 seconds
+ - PASS - [sdcard_3_integrity.test_7_address_bits] duration = 11.707 seconds
+ - FAIL - [sdcard_3_integrity.test_8_random_mix] duration = 12.710 seconds
+
+SUITE FAIL -  80.00% [sdcard_4_bounds]: pass = 4, fail = 1, skip = 0, total = 5 duration = 58.397 seconds
+ - FAIL - [sdcard_4_bounds.test_1_first_blocks] duration = 21.717 seconds
+ - PASS - [sdcard_4_bounds.test_2_last_blocks] duration = 11.690 seconds
+ - PASS - [sdcard_4_bounds.test_3_past_the_end_refused] duration = 0.003 seconds
+ - PASS - [sdcard_4_bounds.test_4_wrapping_range_refused] duration = 0.353 seconds
+ - PASS - [sdcard_4_bounds.test_5_whole_range_sampled] duration = 24.634 seconds
+
+SUITE FAIL -  33.33% [sdcard_5_erase]: pass = 1, fail = 2, skip = 0, total = 3 duration = 32.219 seconds
+ - FAIL - [sdcard_5_erase.test_1_small_erase_exact] duration = 10.050 seconds
+ - PASS - [sdcard_5_erase.test_2_single_block_then_write] duration = 11.692 seconds
+ - FAIL - [sdcard_5_erase.test_3_large_erase] duration = 10.477 seconds
+
+SUITE FAIL -   0.00% [sdcard_6_perf]: pass = 0, fail = 4, skip = 0, total = 4 duration = 93.397 seconds
+ - FAIL - [sdcard_6_perf.test_1_sequential_read] duration = 22.264 seconds
+ - FAIL - [sdcard_6_perf.test_2_sequential_write] duration = 26.689 seconds
+ - FAIL - [sdcard_6_perf.test_3_random_read] duration = 21.790 seconds
+ - FAIL - [sdcard_6_perf.test_4_random_write] duration = 22.654 seconds
+
+SUITE FAIL -   0.00% [sdcard_7_concurrency]: pass = 0, fail = 1, skip = 0, total = 1 duration = 21.747 seconds
+ - FAIL - [sdcard_7_concurrency.test_1_writers_and_reader] duration = 21.747 seconds
+
+SUITE FAIL -  33.33% [sdcard_8_recovery]: pass = 1, fail = 2, skip = 0, total = 3 duration = 55.528 seconds
+ - FAIL - [sdcard_8_recovery.test_1_power_cycles] duration = 22.073 seconds
+ - FAIL - [sdcard_8_recovery.test_2_write_then_power_off] duration = 21.765 seconds
+ - PASS - [sdcard_8_recovery.test_3_unanswered_command] duration = 11.690 seconds
+
+SUITE FAIL -   0.00% [sdcard_9_soak]: pass = 0, fail = 2, skip = 0, total = 2 duration = 31.878 seconds
+ - FAIL - [sdcard_9_soak.test_1_random_workload] duration = 10.119 seconds
+ - FAIL - [sdcard_9_soak.test_2_final_verify] duration = 21.759 seconds
+
+SUITE FAIL -   0.00% [sdcard_zz_summary]: pass = 0, fail = 1, skip = 0, total = 1 duration = 0.023 seconds
+ - FAIL - [sdcard_zz_summary.test_no_recovery_needed] duration = 0.023 seconds
+
+------ TESTSUITE SUMMARY END ------
+
+===================================================================
+PROJECT EXECUTION FAILED

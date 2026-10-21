@@ -1,0 +1,14 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * A BCM283x pin controller for pinctrl_bcm2711.c (compiled into the test
+ * against a fake register block; the real driver is disabled in prj.conf).
+ */
+
+/ {
+	fake_pinctrl: pin-controller@3f200000 {
+		compatible = "brcm,bcm2711-pinctrl";
+		reg = <0x3f200000 0xf4>;
+		ngpios = <54>;
+	};
+};

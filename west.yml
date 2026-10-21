@@ -1,0 +1,23 @@
+# West manifest for the BCM283x SD card work.
+#
+# This repository is the manifest ("T2" topology): `west init -l` from here
+# fetches the pinned Zephyr, and no modules: the tests need none.
+#
+# The pin is a main-branch commit of the v4.5 development cycle, the first
+# with BCM2710 (Raspberry Pi 3 / Zero 2 W) SoC support. Move it to the v4.5.0 tag once that is released.
+manifest:
+  remotes:
+    - name: zephyrproject-rtos
+      url-base: https://github.com/zephyrproject-rtos
+
+  projects:
+    - name: zephyr
+      remote: zephyrproject-rtos
+      revision: a915b2f12675b48b16d56653ea145dcd8f20cbbf
+      # No module imports; but Zephyr's west extensions ("west build",
+      # "west patch") still have to be named.
+      west-commands: scripts/west-commands.yml
+      import: false
+
+  self:
+    path: sdcard

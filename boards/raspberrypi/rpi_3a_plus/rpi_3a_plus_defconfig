@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# The default 8 MMU translation tables are insufficient once the image
+# map and the SoC device regions are accounted for.
+CONFIG_MAX_XLAT_TABLES=12
+
+# Bus masters (USB controller, DMA) don't snoop the CPU caches: let
+# drivers clean/invalidate them around DMA (the BCM2711 SoC defaults to
+# this; BCM2710 doesn't).
+CONFIG_CACHE_MANAGEMENT=y
+
+# Serial / console
+CONFIG_SERIAL=y
+CONFIG_UART_INTERRUPT_DRIVEN=y
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# ARM generic timer frequency is read at runtime.
+CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME=y
+
+# Firmware-controlled power domains (USB controller)
+CONFIG_POWER_DOMAIN=y
+CONFIG_PM_DEVICE=y
+CONFIG_PM_DEVICE_POWER_DOMAIN=y

@@ -1,0 +1,59 @@
+# Doxygen configuration for the documentation check (scripts/check-docs.py),
+# which reads the XML output: every function, its parameters and its return
+# value must be documented. Run from the repository root.
+PROJECT_NAME           = "BCM283x SD card support"
+OUTPUT_DIRECTORY       = build/doxygen
+GENERATE_HTML          = NO
+GENERATE_LATEX         = NO
+GENERATE_XML           = YES
+XML_PROGRAMLISTING     = NO
+QUIET                  = YES
+INPUT                  = hal/include tests/sdhost_review/src tests/sdhost_hw/src \
+                         tests/sdcard_hw/src tests/hal_bcm2835/src \
+                         scripts/check-docs.py scripts/check-coverage.py
+FILE_PATTERNS          = *.c *.h *.py
+RECURSIVE              = YES
+EXTRACT_ALL            = YES
+EXTRACT_STATIC         = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_LOCAL_CLASSES  = YES
+WARN_IF_UNDOCUMENTED   = NO
+WARN_IF_DOC_ERROR      = YES
+WARN_IF_INCOMPLETE_DOC = YES
+WARN_NO_PARAMDOC       = NO
+WARN_AS_ERROR          = NO
+WARN_FORMAT            = "$file:$line: $text"
+# Only functions are linted: structs, macros and variables are documented
+# where they need it, in ordinary comments.
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+SEARCH_INCLUDES        = NO
+# Test bodies become functions; file-scope definition macros disappear.
+PREDEFINED             = "ZTEST(s,n)=void s##_##n(void)" \
+                         "ZTEST_F(s,n)=void s##_##n(void)" \
+                         "BUILD_ASSERT(...)=" \
+                         "ETH_NET_DEVICE_INIT(...)=" \
+                         "K_CONDVAR_DEFINE(...)=" \
+                         "K_EVENT_DEFINE(...)=" \
+                         "K_MUTEX_DEFINE(...)=" \
+                         "K_MEM_SLAB_DEFINE_STATIC(...)=" \
+                         "K_SEM_DEFINE(...)=" \
+                         "K_THREAD_DEFINE(...)=" \
+                         "K_THREAD_STACK_ARRAY_DEFINE(...)=" \
+                         "K_THREAD_STACK_DEFINE(...)=" \
+                         "LOG_MODULE_REGISTER(...)=" \
+                         "PINCTRL_DT_DEFINE(...)=" \
+                         "SHELL_CMD_REGISTER(...)=" \
+                         "SHELL_CMD_ARG_REGISTER(...)=" \
+                         "SHELL_STATIC_SUBCMD_SET_CREATE(...)=" \
+                         "SYS_INIT(...)=" \
+                         "USBH_CONTROLLER_DEFINE(...)=" \
+                         "USBH_DEFINE_CLASS(...)=" \
+                         "ZTEST_EXPECT_FAIL(...)=" \
+                         "ZTEST_SUITE(...)=" \
+                         "__aligned(x)=" \
+                         "__packed=" \
+                         "__printf_like(a,b)=" \
+                         "__unused=" \
+                         "__maybe_unused="

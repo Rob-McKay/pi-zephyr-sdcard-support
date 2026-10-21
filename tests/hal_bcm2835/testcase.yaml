@@ -1,0 +1,5 @@
+tests:
+  sdcard.hal_bcm2835:
+    platform_allow: native_sim/native/64
+    tags: hal
+    harness: ztest

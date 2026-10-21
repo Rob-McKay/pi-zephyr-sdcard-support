@@ -1,0 +1,314 @@
+# Console log, condensed: runs of identical 'read ran on' warnings are folded into one line with a count.
+
+
+
+
+Raspberry Pi Bootcode
+Read File: config.txt, 455
+Read File: start_cd.elf, 844380 (bytes)
+Read File: fixup_cd.dat, 3280 (bytes)
+<inf> sdhc_bcm2835_sdhost: mmc@3f202000 init ok (clk_in=250000000 Hz, bus=4-bit, SDEDM=0x00010800 [FSM=0x0 rd_thr=4 wr_thr=4])
+*** Booting Zephyr OS build a915b2f12675 ***
+Running TESTSUITE sdcard_1_identify
+===================================================================
+scratch area lies in free clusters 1945957-1948004 of FAT32 partition at block 32768
+card: 124735488 blocks of 512 bytes (60906 MB)
+bus: 4-bit, core clock 250000000 Hz / (SDCDIV 3 + 2) = 50000000 Hz
+scratch area: blocks 124604416-124735487 (64 MB, written by these tests)
+random seed: 12670007 (CONFIG_SDCARD_HW_SEED repeats it)
+START - test_bus_4bit
+ PASS - test_bus_4bit in 0.003 seconds
+===================================================================
+START - test_bus_clock_in_spec
+SD bus clock 50000000 Hz
+ PASS - test_bus_clock_in_spec in 0.004 seconds
+===================================================================
+START - test_data_timeout_covers_busy
+SDTOUT 15728640 cycles = 314 ms at 50000000 Hz
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_1_identify.c:74: sdcard_1_identify_test_data_timeout_covers_busy: (ms >= 500U is false)
+data timeout 314 ms < 500 ms (review finding 4)
+ FAIL - test_data_timeout_covers_busy in 0.023 seconds
+===================================================================
+START - test_disk_ready
+ PASS - test_disk_ready in 0.003 seconds
+===================================================================
+START - test_ioctls
+ PASS - test_ioctls in 0.003 seconds
+===================================================================
+TESTSUITE sdcard_1_identify failed.
+Running TESTSUITE sdcard_2_bootfs
+===================================================================
+boot partition at block 32768: 64 blocks a cluster, 7 files
+START - test_1_layout
+ PASS - test_1_layout in 0.003 seconds
+===================================================================
+START - test_2_config_txt
+ PASS - test_2_config_txt in 0.005 seconds
+===================================================================
+START - test_3_files_read_consistently
+BOOTCODE.BIN    52624 bytes  crc32 53c9b136  (39 ms for the 3 reads)
+CONFIG.TXT        455 bytes  crc32 931a2e15  (20 ms for the 3 reads)
+FIXUP_CD.DAT     3280 bytes  crc32 5aec4a9b  (19 ms for the 3 reads)
+LICENC~2.BRO     1594 bytes  crc32 ac43b6db  (18 ms for the 3 reads)
+START_CD.ELF   844380 bytes  crc32 0a4e81da  (513 ms for the 3 reads)
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms
+ZEPHYR.BIN    3457028 bytes  crc32 b93dbc96  (2093 ms for the 3 reads)
+ZEPHYR.CRC          9 bytes  crc32 8ce2dded  (20 ms for the 3 reads)
+ PASS - test_3_files_read_consistently in 2.765 seconds
+===================================================================
+START - test_4_image_crc_matches_host
+ PASS - test_4_image_crc_matches_host in 0.238 seconds
+===================================================================
+START - test_5_multi_block_read_stress
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms
+1000 multi-block reads, 130989 blocks, 20407 kB/s
+ PASS - test_5_multi_block_read_stress in 3.847 seconds
+===================================================================
+TESTSUITE sdcard_2_bootfs succeeded
+Running TESTSUITE sdcard_3_integrity
+===================================================================
+START - test_1_patterns
+ PASS - test_1_patterns in 0.013 seconds
+===================================================================
+START - test_2_transfer_sizes
+ PASS - test_2_transfer_sizes in 0.520 seconds
+===================================================================
+START - test_3_chunking
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms
+ PASS - test_3_chunking in 0.356 seconds
+===================================================================
+START - test_4_misaligned_buffers
+ PASS - test_4_misaligned_buffers in 0.026 seconds
+===================================================================
+START - test_5_neighbours_untouched
+ PASS - test_5_neighbours_untouched in 0.029 seconds
+===================================================================
+START - test_6_overwrite
+ PASS - test_6_overwrite in 0.053 seconds
+===================================================================
+START - test_7_address_bits
+ PASS - test_7_address_bits in 0.024 seconds
+===================================================================
+START - test_8_random_mix
+ PASS - test_8_random_mix in 5.518 seconds
+===================================================================
+TESTSUITE sdcard_3_integrity succeeded
+Running TESTSUITE sdcard_4_bounds
+===================================================================
+START - test_1_first_blocks
+ PASS - test_1_first_blocks in 0.008 seconds
+===================================================================
+START - test_2_last_blocks
+ PASS - test_2_last_blocks in 0.016 seconds
+===================================================================
+START - test_3_past_the_end_refused
+ PASS - test_3_past_the_end_refused in 0.004 seconds
+===================================================================
+START - test_4_wrapping_range_refused
+<err> sdhc_bcm2835_sdhost: PIO r: sdhsts=0x00000080 fsm=0x1 b=1 w=128
+<err> sd: Failed to read from SDMMC -116
+<err> sd: Card read failed
+
+    Assertion failed at CMAKE_SOURCE_DIR/src/test_4_bounds.c:66: sdcard_4_bounds_test_4_wrapping_range_refused: (ret not equal to -EINVAL)
+read of block 0xffffffff went to the card (-116): the SD stack's bounds check wrapped
+ PASS - test_4_wrapping_range_refused in 0.354 seconds
+===================================================================
+START - test_5_whole_range_sampled
+ PASS - test_5_whole_range_sampled in 22.849 seconds
+===================================================================
+TESTSUITE sdcard_4_bounds succeeded
+Running TESTSUITE sdcard_5_erase
+===================================================================
+START - test_1_small_erase_exact
+erased blocks read as 0x00
+ PASS - test_1_small_erase_exact in 0.020 seconds
+===================================================================
+START - test_2_single_block_then_write
+ PASS - test_2_single_block_then_write in 0.020 seconds
+===================================================================
+START - test_3_large_erase
+8 MB erase: 0 after 15 ms
+ PASS - test_3_large_erase in 0.826 seconds
+===================================================================
+TESTSUITE sdcard_5_erase succeeded
+Running TESTSUITE sdcard_6_perf
+===================================================================
+START - test_1_sequential_read
+sequential read, from block 0:
+     1 blocks/request:   1862 kB/s
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms
+     8 blocks/request:   6372 kB/s
+    64 blocks/request:  16740 kB/s
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms
+   256 blocks/request:  20615 kB/s
+  2048 blocks/request:  23020 kB/s
+ PASS - test_1_sequential_read in 3.169 seconds
+===================================================================
+START - test_2_sequential_write
+sequential write, scratch area:
+     1 blocks/request:    490 kB/s
+     8 blocks/request:   3751 kB/s
+    64 blocks/request:  11090 kB/s
+   256 blocks/request:  14818 kB/s
+  2048 blocks/request:  16677 kB/s
+ PASS - test_2_sequential_write in 6.276 seconds
+===================================================================
+START - test_3_random_read
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms
+random 4 KB read: 500 ops, 1083 ops/s, latency min 300 us, avg 923 us, max 10000 us
+ PASS - test_3_random_read in 0.471 seconds
+===================================================================
+START - test_4_random_write
+random 4 KB write: 500 ops, 678 ops/s, latency min 800 us, avg 1473 us, max 103600 us
+ PASS - test_4_random_write in 1.035 seconds
+===================================================================
+TESTSUITE sdcard_6_perf succeeded
+Running TESTSUITE sdcard_7_concurrency
+===================================================================
+START - test_1_writers_and_reader
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 1 ms   [... this line, with 0-1 ms, 1303 times in a row: condensed]
+3 writers x 1 MB x 40 rounds and a reader: 36318 ms; a lower-priority thread ran 0 times in that time (36318 if never blocked)
+ PASS - test_1_writers_and_reader in 36.333 seconds
+===================================================================
+TESTSUITE sdcard_7_concurrency succeeded
+Running TESTSUITE sdcard_8_recovery
+===================================================================
+START - test_1_power_cycles
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 16 times in a row: condensed]
+20 power cycles; slowest card init 41 ms
+ PASS - test_1_power_cycles in 1.039 seconds
+===================================================================
+START - test_2_write_then_power_off
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 3 times in a row: condensed]
+ PASS - test_2_write_then_power_off in 0.278 seconds
+===================================================================
+START - test_3_unanswered_command
+CID ioctl: -116 (CMD2 is not answered in transfer state)
+ PASS - test_3_unanswered_command in 0.008 seconds
+===================================================================
+TESTSUITE sdcard_8_recovery succeeded
+Running TESTSUITE sdcard_9_soak
+===================================================================
+START - test_1_random_workload
+soak for 600 s over 64 MB
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 1172 times in a row: condensed]
+soak 30 s: 1528 writes (113 MB, 3949 kB/s), 1842 reads (133 MB, 4672 kB/s), 104 erases
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 1090 times in a row: condensed]
+soak 60 s: 2979 writes (213 MB, 3733 kB/s), 3501 reads (252 MB, 4418 kB/s), 206 erases
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 1017 times in a row: condensed]
+soak 90 s: 4342 writes (317 MB, 3696 kB/s), 5064 reads (376 MB, 4389 kB/s), 306 erases
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 1050 times in a row: condensed]
+soak 120 s: 5810 writes (424 MB, 3713 kB/s), 6646 reads (503 MB, 4402 kB/s), 397 erases
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 1004 times in a row: condensed]
+soak 150 s: 7181 writes (516 MB, 3613 kB/s), 8227 reads (625 MB, 4374 kB/s), 496 erases
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 997 times in a row: condensed]
+soak 180 s: 8546 writes (636 MB, 3705 kB/s), 9797 reads (737 MB, 4296 kB/s), 596 erases
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 1100 times in a row: condensed]
+soak 210 s: 9947 writes (735 MB, 3674 kB/s), 11520 reads (847 MB, 4233 kB/s), 700 erases
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 1111 times in a row: condensed]
+soak 240 s: 11403 writes (844 MB, 3687 kB/s), 13256 reads (970 MB, 4238 kB/s), 813 erases
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 1016 times in a row: condensed]
+soak 270 s: 12737 writes (938 MB, 3644 kB/s), 14807 reads (1094 MB, 4250 kB/s), 908 erases
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 978 times in a row: condensed]
+soak 300 s: 14125 writes (1033 MB, 3612 kB/s), 16267 reads (1222 MB, 4273 kB/s), 1001 erases
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 1056 times in a row: condensed]
+soak 330 s: 15506 writes (1134 MB, 3603 kB/s), 17859 reads (1355 MB, 4308 kB/s), 1059 erases
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 1086 times in a row: condensed]
+soak 360 s: 16925 writes (1243 MB, 3623 kB/s), 19562 reads (1490 MB, 4341 kB/s), 1150 erases
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 1074 times in a row: condensed]
+soak 390 s: 18338 writes (1344 MB, 3615 kB/s), 21228 reads (1616 MB, 4345 kB/s), 1260 erases
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 1034 times in a row: condensed]
+soak 420 s: 19715 writes (1458 MB, 3641 kB/s), 22787 reads (1755 MB, 4381 kB/s), 1356 erases
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 1064 times in a row: condensed]
+soak 450 s: 21079 writes (1558 MB, 3631 kB/s), 24410 reads (1879 MB, 4378 kB/s), 1455 erases
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 1038 times in a row: condensed]
+soak 480 s: 22472 writes (1670 MB, 3648 kB/s), 25985 reads (1993 MB, 4354 kB/s), 1559 erases
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 1050 times in a row: condensed]
+soak 510 s: 23855 writes (1781 MB, 3662 kB/s), 27583 reads (2126 MB, 4371 kB/s), 1657 erases
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 1107 times in a row: condensed]
+soak 540 s: 25186 writes (1878 MB, 3648 kB/s), 29190 reads (2257 MB, 4382 kB/s), 1750 erases
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 1026 times in a row: condensed]
+soak 570 s: 26509 writes (1990 MB, 3660 kB/s), 30750 reads (2373 MB, 4366 kB/s), 1838 erases
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 978 times in a row: condensed]
+soak 600 s: 27853 writes (2098 MB, 3666 kB/s), 32237 reads (2495 MB, 4360 kB/s), 1919 erases
+soak 600 s: 27853 writes (2098 MB, 3666 kB/s), 32237 reads (2495 MB, 4360 kB/s), 1919 erases
+ PASS - test_1_random_workload in 152.648 seconds
+===================================================================
+START - test_2_final_verify
+<wrn> sdhc_bcm2835_sdhost: mmc@3f202000 read ran on past its last block: stopped, 0 words discarded, 0 ms   [... this line, with 0-1 ms, 63 times in a row: condensed]
+scratch area verified
+ PASS - test_2_final_verify in 3.888 seconds
+===================================================================
+TESTSUITE sdcard_9_soak succeeded
+Running TESTSUITE sdcard_zz_summary
+===================================================================
+START - test_no_recovery_needed
+recoveries needed during the run: 0, of which 0 failed
+ PASS - test_no_recovery_needed in 0.005 seconds
+===================================================================
+TESTSUITE sdcard_zz_summary succeeded
+
+------ TESTSUITE SUMMARY START ------
+
+SUITE FAIL -  80.00% [sdcard_1_identify]: pass = 4, fail = 1, skip = 0, total = 5 duration = 0.036 seconds
+ - PASS - [sdcard_1_identify.test_bus_4bit] duration = 0.003 seconds
+ - PASS - [sdcard_1_identify.test_bus_clock_in_spec] duration = 0.004 seconds
+ - FAIL - [sdcard_1_identify.test_data_timeout_covers_busy] duration = 0.023 seconds
+ - PASS - [sdcard_1_identify.test_disk_ready] duration = 0.003 seconds
+ - PASS - [sdcard_1_identify.test_ioctls] duration = 0.003 seconds
+
+SUITE PASS - 100.00% [sdcard_2_bootfs]: pass = 5, fail = 0, skip = 0, total = 5 duration = 6.858 seconds
+ - PASS - [sdcard_2_bootfs.test_1_layout] duration = 0.003 seconds
+ - PASS - [sdcard_2_bootfs.test_2_config_txt] duration = 0.005 seconds
+ - PASS - [sdcard_2_bootfs.test_3_files_read_consistently] duration = 2.765 seconds
+ - PASS - [sdcard_2_bootfs.test_4_image_crc_matches_host] duration = 0.238 seconds
+ - PASS - [sdcard_2_bootfs.test_5_multi_block_read_stress] duration = 3.847 seconds
+
+SUITE PASS - 100.00% [sdcard_3_integrity]: pass = 8, fail = 0, skip = 0, total = 8 duration = 6.539 seconds
+ - PASS - [sdcard_3_integrity.test_1_patterns] duration = 0.013 seconds
+ - PASS - [sdcard_3_integrity.test_2_transfer_sizes] duration = 0.520 seconds
+ - PASS - [sdcard_3_integrity.test_3_chunking] duration = 0.356 seconds
+ - PASS - [sdcard_3_integrity.test_4_misaligned_buffers] duration = 0.026 seconds
+ - PASS - [sdcard_3_integrity.test_5_neighbours_untouched] duration = 0.029 seconds
+ - PASS - [sdcard_3_integrity.test_6_overwrite] duration = 0.053 seconds
+ - PASS - [sdcard_3_integrity.test_7_address_bits] duration = 0.024 seconds
+ - PASS - [sdcard_3_integrity.test_8_random_mix] duration = 5.518 seconds
+
+SUITE PASS - 100.00% [sdcard_4_bounds]: pass = 5, fail = 0, skip = 0, total = 5 duration = 23.231 seconds
+ - PASS - [sdcard_4_bounds.test_1_first_blocks] duration = 0.008 seconds
+ - PASS - [sdcard_4_bounds.test_2_last_blocks] duration = 0.016 seconds
+ - PASS - [sdcard_4_bounds.test_3_past_the_end_refused] duration = 0.004 seconds
+ - PASS - [sdcard_4_bounds.test_4_wrapping_range_refused] duration = 0.354 seconds
+ - PASS - [sdcard_4_bounds.test_5_whole_range_sampled] duration = 22.849 seconds
+
+SUITE PASS - 100.00% [sdcard_5_erase]: pass = 3, fail = 0, skip = 0, total = 3 duration = 0.866 seconds
+ - PASS - [sdcard_5_erase.test_1_small_erase_exact] duration = 0.020 seconds
+ - PASS - [sdcard_5_erase.test_2_single_block_then_write] duration = 0.020 seconds
+ - PASS - [sdcard_5_erase.test_3_large_erase] duration = 0.826 seconds
+
+SUITE PASS - 100.00% [sdcard_6_perf]: pass = 4, fail = 0, skip = 0, total = 4 duration = 10.951 seconds
+ - PASS - [sdcard_6_perf.test_1_sequential_read] duration = 3.169 seconds
+ - PASS - [sdcard_6_perf.test_2_sequential_write] duration = 6.276 seconds
+ - PASS - [sdcard_6_perf.test_3_random_read] duration = 0.471 seconds
+ - PASS - [sdcard_6_perf.test_4_random_write] duration = 1.035 seconds
+
+SUITE PASS - 100.00% [sdcard_7_concurrency]: pass = 1, fail = 0, skip = 0, total = 1 duration = 36.333 seconds
+ - PASS - [sdcard_7_concurrency.test_1_writers_and_reader] duration = 36.333 seconds
+
+SUITE PASS - 100.00% [sdcard_8_recovery]: pass = 3, fail = 0, skip = 0, total = 3 duration = 1.325 seconds
+ - PASS - [sdcard_8_recovery.test_1_power_cycles] duration = 1.039 seconds
+ - PASS - [sdcard_8_recovery.test_2_write_then_power_off] duration = 0.278 seconds
+ - PASS - [sdcard_8_recovery.test_3_unanswered_command] duration = 0.008 seconds
+
+SUITE PASS - 100.00% [sdcard_9_soak]: pass = 2, fail = 0, skip = 0, total = 2 duration = 156.536 seconds
+ - PASS - [sdcard_9_soak.test_1_random_workload] duration = 152.648 seconds
+ - PASS - [sdcard_9_soak.test_2_final_verify] duration = 3.888 seconds
+
+SUITE PASS - 100.00% [sdcard_zz_summary]: pass = 1, fail = 0, skip = 0, total = 1 duration = 0.005 seconds
+ - PASS - [sdcard_zz_summary.test_no_recovery_needed] duration = 0.005 seconds
+
+------ TESTSUITE SUMMARY END ------
+
+===================================================================
+PROJECT EXECUTION FAILED

@@ -1,0 +1,7 @@
+tests:
+  sdhost_hw.review:
+    platform_allow: rpi_3a_plus
+    tags: sdhc
+    harness: ztest
+    # Needs a Pi 3A+ with a spare SD card: see docs/reviews/pr110196-sdhost-review.md.
+    build_only: true

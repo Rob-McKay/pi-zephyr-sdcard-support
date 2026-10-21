@@ -1,0 +1,65 @@
+diff --git a/drivers/firmware/rpi_fw/rpi_fw.c b/drivers/firmware/rpi_fw/rpi_fw.c
+index 230f1d6fe..9546ffb14 100644
+--- a/drivers/firmware/rpi_fw/rpi_fw.c
++++ b/drivers/firmware/rpi_fw/rpi_fw.c
+@@ -16,7 +16,8 @@
+ #include <zephyr/logging/log.h>
+ LOG_MODULE_REGISTER(rpi_fw, CONFIG_LOG_DEFAULT_LEVEL);
+ 
+-#define RPI_FW_RESPONSE_TIMEOUT 100U
++/* As Linux: the firmware can take a while, e.g. to power a domain on. */
++#define RPI_FW_RESPONSE_TIMEOUT 1000U
+ #define RPI_FW_RESPONSE_STATUS  1U
+ #define RPI_FW_RESPONSE_TAG     2U
+ #define RPI_FW_BUF_OVERHEAD     (3 * sizeof(uint32_t))
+@@ -31,6 +32,7 @@ struct rpi_fw_tag_header {
+ struct rpi_fw_config {
+ 	struct mbox_dt_spec mbox;
+ 	mem_addr_t shm;
++	uint32_t shm_bus;
+ 	size_t shm_size;
+ };
+ 
+@@ -132,10 +134,12 @@ int rpi_fw_transfer_list(const struct device *dev, struct rpi_fw_tag_list *tag_l
+ 	}
+ 
+ 	/* All shared memory addresses exchanged via the mailbox must be
+-	 * physical bus addresses. The VideoCore has no knowledge of the
+-	 * virtual address space.
++	 * bus addresses, as the VideoCore sees the buffer: it has no
++	 * knowledge of the virtual address space, and on BCM283x it must
++	 * read RAM through the uncached alias given by the mailbox bus's
++	 * dma-ranges, not through its own L2 cache.
+ 	 */
+-	msg.data = (void *)fw_config->shm;
++	msg.data = UINT_TO_POINTER(fw_config->shm_bus);
+ 	msg.size = sizeof(uint32_t);
+ 
+ 	ret = rpi_fw_transaction(dev, &msg);
+@@ -206,6 +210,18 @@ static int rpi_fw_init(const struct device *dev)
+ 	return 0;
+ }
+ 
++/* Bus address of the shared buffer: through the mailbox bus's first
++ * dma-ranges entry if it has one, else its physical address.
++ */
++#define RPI_FW_SHM_NODE(n) DT_PHANDLE(DT_DRV_INST(n), shared_memory)
++#define RPI_FW_MBOX_BUS(n) DT_PARENT(DT_INST_PHANDLE_BY_NAME(n, mboxes, vc))
++#define RPI_FW_SHM_BUS(n)                                                                          \
++	COND_CODE_1(DT_DMA_RANGES_HAS_IDX(RPI_FW_MBOX_BUS(n), 0),                                  \
++		    (DT_REG_ADDR(RPI_FW_SHM_NODE(n)) -                                             \
++		     DT_DMA_RANGES_PARENT_BUS_ADDRESS_BY_IDX(RPI_FW_MBOX_BUS(n), 0) +              \
++		     DT_DMA_RANGES_CHILD_BUS_ADDRESS_BY_IDX(RPI_FW_MBOX_BUS(n), 0)),               \
++		    (DT_REG_ADDR(RPI_FW_SHM_NODE(n))))
++
+ #define RPI_FW_DEFINE(n)                                                                           \
+ 	static struct rpi_fw_data rpi_fw_data_##n;                                                 \
+                                                                                                    \
+@@ -213,6 +229,7 @@ static int rpi_fw_init(const struct device *dev)
+ 		.mbox = MBOX_DT_SPEC_INST_GET(n, vc),                                              \
+ 		.shm_size = DT_REG_SIZE(DT_PHANDLE(DT_DRV_INST(n), shared_memory)),                \
+ 		.shm = DT_REG_ADDR(DT_PHANDLE(DT_DRV_INST(n), shared_memory)),                     \
++		.shm_bus = RPI_FW_SHM_BUS(n),                                                      \
+ 	};                                                                                         \
+                                                                                                    \
+ 	DEVICE_DT_INST_DEFINE(n, rpi_fw_init, NULL, &rpi_fw_data_##n, &rpi_fw_cfg_##n,             \

@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config SDCARD_HW_SCRATCH_MB
+	int "Scratch area at the end of the card, in MB"
+	default 64
+	range 64 1024
+	help
+	  The write tests use only the last this-many megabytes of the card,
+	  and only if no MBR partition reaches them. The card must be at least
+	  twice this size.
+
+config SDCARD_HW_SOAK_SECONDS
+	int "Soak test duration, in seconds"
+	default 600
+	help
+	  How long the random read/write/verify workload of the last suite
+	  runs. 0 skips it.
+
+config SDCARD_HW_SEED
+	int "Random seed (0: from the clock)"
+	default 0
+	help
+	  Seed for the random block addresses and sizes. Each run prints the
+	  seed it used; set it here to repeat a failing run exactly.
+
+config SDCARD_HW_ON_QEMU
+	bool "Built for QEMU's raspi3ap (smoke test)"
+	help
+	  QEMU models the SDHost's data path but not its clock, timeout or
+	  bus width registers: the tests that read those are skipped.
+
+source "Kconfig.zephyr"

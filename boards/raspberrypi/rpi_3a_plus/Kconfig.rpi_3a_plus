@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RPI_3A_PLUS
+	select SOC_BCM2710

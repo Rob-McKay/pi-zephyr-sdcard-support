@@ -1,0 +1,48 @@
+# Patches to Zephyr, applied with "west patch apply" after "west update"
+# (the Dockerfile does both). Each one waits for an upstream pull request;
+# drop it once the west.yml pin includes the merged change. See
+# docs/UPSTREAM.md.
+patches:
+  # BCM283x SDHost driver for the microSD slot (rpi_zero_2w upstream; the
+  # rpi_3a_plus board here enables it). Approved, milestone v4.6.0. Applies
+  # unchanged on the pinned commit. The driver under test.
+  - path: zephyr/pr110196-bcm2835-sdhost.patch
+    sha256sum: 1df486cb4bb4c51d3d6fec5f1eaf88247d0332259dc1605384fe022e47ce8ca6
+    module: zephyr
+    author: Jonathan E. Peace
+    email: jep@alphabetiq.com
+    date: 2026-05-26
+    upstreamable: true
+    merge-pr: https://github.com/zephyrproject-rtos/zephyr/pull/110196
+    merge-status: false
+  # Review finding 12 (docs/reviews/pr110196-sdhost-review.md), found on a
+  # real Pi 3A+: an open-ended read (CMD18) sometimes runs on into the
+  # block after the last one asked for before the driver stops the card;
+  # the FIFO fills, the controller stops the bus clock, and the read and
+  # every later request fail until a re-init (about 12 s). Now CMD12 is
+  # sent at once and the FIFO emptied, the extra words discarded, until
+  # the command and the data phase are done; a failed open-ended read is
+  # stopped the same way (finding 2, reads). On top of PR #110196. Not
+  # yet sent upstream.
+  - path: zephyr/sdhost-stop-open-read.patch
+    sha256sum: f8e44b9d4a07fa619d22ea55f30ebd38da0a74d5cb2ad2e7a2c06ae77b3b1ce7
+    module: zephyr
+    author: Claude
+    email: noreply@anthropic.com
+    date: 2026-10-20
+    upstreamable: true
+    merge-status: false
+  # The firmware driver gave the VideoCore the shared buffer's ARM
+  # physical address. On BCM2837 the VideoCore must read ARM RAM through
+  # the uncached alias in the soc node's dma-ranges (0xC0000000), as Linux
+  # does; on a real Pi 3A+ the firmware never answered. Also waits up to
+  # 1 s for a reply, as Linux, instead of 100 ms. The tests read the real
+  # core clock through it. Not yet sent upstream.
+  - path: zephyr/rpi-fw-bus-address.patch
+    sha256sum: bcb06393d91a3a0812e4863c08ad09187fc2a01f1355e65253ae21a3c0260d82
+    module: zephyr
+    author: Claude
+    email: noreply@anthropic.com
+    date: 2026-10-18
+    upstreamable: true
+    merge-status: false

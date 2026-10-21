@@ -1,0 +1,87 @@
+Raspberry Pi Bootcode
+Read File: config.txt, 455
+Read File: start_cd.elf, 844380 (bytes)
+Read File: fixup_cd.dat, 3280 (bytes)
+I: mmc@3f202000 init ok (clk_in=250000000 Hz, bus=4-bit, SDEDM=0x00010800 [FSM=0x0 rd_thr=4 wr_thr=4])
+*** Booting Zephyr OS build a915b2f12675 ***
+Running TESTSUITE sdhc
+===================================================================
+START - test_card_if_cond
+Found SDHC/SDXC card
+ PASS - test_card_if_cond in 0.007 seconds
+===================================================================
+START - test_card_presence
+ PASS - test_card_presence in 0.001 seconds
+===================================================================
+START - test_host_props
+ PASS - test_host_props in 0.001 seconds
+===================================================================
+START - test_reset
+ PASS - test_reset in 0.041 seconds
+===================================================================
+START - test_set_io
+ PASS - test_set_io in 0.001 seconds
+===================================================================
+TESTSUITE sdhc succeeded
+
+------ TESTSUITE SUMMARY START ------
+
+SUITE PASS - 100.00% [sdhc]: pass = 5, fail = 0, skip = 0, total = 5 duration = 0.051 seconds
+ - PASS - [sdhc.test_card_if_cond] duration = 0.007 seconds
+ - PASS - [sdhc.test_card_presence] duration = 0.001 seconds
+ - PASS - [sdhc.test_host_props] duration = 0.001 seconds
+ - PASS - [sdhc.test_reset] duration = 0.041 seconds
+ - PASS - [sdhc.test_set_io] duration = 0.001 seconds
+
+------ TESTSUITE SUMMARY END ------
+
+===================================================================
+PROJECT EXECUTION SUCCESSFUL
+
+
+
+
+Raspberry Pi Bootcode
+Read File: config.txt, 455
+Read File: start_cd.elf, 844380 (bytes)
+Read File: fixup_cd.dat, 3280 (bytes)
+I: mmc@3f202000 init ok (clk_in=250000000 Hz, bus=4-bit, SDEDM=0x00010800 [FSM=0x0 rd_thr=4 wr_thr=4])
+*** Booting Zephyr OS build a915b2f12675 ***
+Running TESTSUITE disk_driver
+===================================================================
+Disk reports 124735488 sectors
+Disk reports sector size 512
+START - test_erase
+Testing erase of 8 sectors
+Testing erase of 16 sectors
+Testing erase of 24 sectors
+Testing erase of 32 sectors
+ PASS - test_erase in 0.207 seconds
+===================================================================
+START - test_read
+Testing reads of 8 sectors
+Testing reads of 1 sectors
+Testing reads of 29 sectors
+Testing reads of 31 sectors
+ PASS - test_read in 0.020 seconds
+===================================================================
+START - test_write
+Testing writes of 8 sectors
+Testing writes of 1 sectors
+Testing writes of 29 sectors
+Testing writes of 31 sectors
+ PASS - test_write in 0.044 seconds
+===================================================================
+TESTSUITE disk_driver succeeded
+
+------ TESTSUITE SUMMARY START ------
+
+SUITE PASS - 100.00% [disk_driver]: pass = 3, fail = 0, skip = 0, total = 3 duration = 0.271 seconds
+ - PASS - [disk_driver.test_erase] duration = 0.207 seconds
+ - PASS - [disk_driver.test_read] duration = 0.020 seconds
+ - PASS - [disk_driver.test_write] duration = 0.044 seconds
+
+------ TESTSUITE SUMMARY END ------
+
+===================================================================
+PROJECT EXECUTION SUCCESSFUL

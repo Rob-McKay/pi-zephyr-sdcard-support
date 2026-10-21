@@ -1,0 +1,17 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Run an rpi_3a_plus build on QEMU's raspi3ap machine. QEMU's BCM2835 RNG
+ * model is smaller than the real block (Zephyr's driver touches a register
+ * past its end), so use a software entropy source instead.
+ */
+
+/ {
+	chosen {
+		/delete-property/ zephyr,entropy;
+	};
+};
+
+&rng {
+	status = "disabled";
+};
