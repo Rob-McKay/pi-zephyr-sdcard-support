@@ -45,15 +45,12 @@ ZTEST(sdcard_4_bounds, test_3_past_the_end_refused)
  * @brief A range whose end wraps past block 0xffffffff is refused (-EINVAL)
  *        before reaching the card.
  *
- * Zephyr's SD stack checks reads and writes with start + count >
+ * Unpatched, Zephyr's SD stack checks reads and writes with start + count >
  * block_count (subsys/sd/sd_ops.c), which wraps to a small number for
  * block 0xffffffff, so the request goes to the card and only the card's
- * error stops it. Its erase check is overflow-aware; reads and writes
- * aren't. Not the SDHost driver's bug, but a write could wrap the same way.
- * Marked as an expected failure: when Zephyr fixes the check it passes,
- * which fails the suite, as a reminder to remove the marker.
+ * error stops it. zephyr/patches/zephyr/sd-ops-bounds-overflow.patch makes
+ * the check overflow-aware, as the erase check already is.
  */
-ZTEST_EXPECT_FAIL(sdcard_4_bounds, test_4_wrapping_range_refused);
 ZTEST(sdcard_4_bounds, test_4_wrapping_range_refused)
 {
 	int ret = disk_access_read(SDQ_DISK, sdq_rbuf, UINT32_MAX, 1);

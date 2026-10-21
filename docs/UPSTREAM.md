@@ -18,6 +18,7 @@ patches, run `make image`**.
 | `pr110196-bcm2835-sdhost.patch` | [#110196](https://github.com/zephyrproject-rtos/zephyr/pull/110196) SDHost (SD card) driver | The driver under test | Approved, milestone v4.6.0. Reviewed here: [reviews/pr110196-sdhost-review.md](reviews/pr110196-sdhost-review.md) |
 | `sdhost-stop-open-read.patch` | none yet (on top of #110196) | Stops a multi-block read that runs on, and a failed one: review findings 12, and 2 for reads | Found and confirmed on a real Pi 3A+ (eighth run: every test passed, no run-ons in over 100,000 multi-block reads). Not yet sent upstream |
 | `rpi-fw-bus-address.patch` | none yet | Firmware mailbox on a real Pi 3A+, which the tests use to read the core clock | Not yet sent upstream |
+| `sd-ops-bounds-overflow.patch` | none yet | Zephyr's SD stack refuses read and write ranges that wrap past block 0xffffffff (`subsys/sd/sd_ops.c`); not the SDHost driver | Still in Zephyr main on 21 October 2026. Tested by `tests/sd_bounds` (`make test`); not yet run on the Pi. Not yet sent upstream; independent of #110196 |
 
 The board support PR of the same series,
 [#110189](https://github.com/zephyrproject-rtos/zephyr/pull/110189), has

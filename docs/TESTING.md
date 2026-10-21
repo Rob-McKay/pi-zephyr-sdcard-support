@@ -111,7 +111,7 @@ summary suite at the end fails if any recovery was needed.
 | | `test_8_random_mix` | 1000 random writes and reads (1-256 blocks) in an 8 MB region, checked against a shadow copy, then the whole region | 2 |
 | 4 bounds | `test_1_first_blocks`, `test_2_last_blocks` | Blocks 0-63 read the same twice; the card's last block and last 64 blocks read and write | |
 | | `test_3_past_the_end_refused` | Reads and writes past the end are refused (-EINVAL) before reaching the card, and the card still works after | |
-| | `test_4_wrapping_range_refused` | A read of block 0xffffffff is refused too. **Expected to fail**: Zephyr's SD stack checks `start + count`, which wraps, so the request reaches the card (not the driver's bug). When Zephyr fixes it, the test passes and fails the suite, as a reminder to remove its `ZTEST_EXPECT_FAIL` | |
+| | `test_4_wrapping_range_refused` | A read of block 0xffffffff is refused too. Unpatched, Zephyr's SD stack checks `start + count`, which wraps, so the request reaches the card (not the driver's bug); `sd-ops-bounds-overflow.patch` fixes it, and `tests/sd_bounds` checks the same without hardware. Failed in runs up to the eighth, which predate the patch | |
 | | `test_5_whole_range_sampled` | One block per MB across the whole card reads | |
 | 5 erase | `test_1_small_erase_exact`, `test_2_single_block_then_write` | Erased blocks read as all 0x00 or all 0xff; their neighbours keep their data; writing after an erase works | |
 | | `test_3_large_erase` | An 8 MB erase, which holds the card busy, completes (its time is printed) | 1 |

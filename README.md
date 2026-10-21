@@ -19,7 +19,8 @@ results and fixes that can be offered to the PR.
 - **On a real Pi 3A+ with a 64 GB SDXC card, with the fix** (21 October
   2026, [log](docs/reviews/logs/2026-10-21-sd-qual-pi3a-sdxc64-run8-corrected.log)):
   every qualification test passed except finding 4 (a 314 ms data timeout)
-  and one expected failure in Zephyr's SD stack (a wrapping bounds check).
+  and a wrapping bounds check in Zephyr's SD stack, since fixed here
+  (`sd-ops-bounds-overflow.patch`, not yet run on the Pi).
   No run-ons in over 100,000 multi-block reads; a 10-minute soak wrote
   3.7 GB and read 4.2 GB. Reads reach 23.6 MB/s, writes 18.7 MB/s.
   Without the fix, every test that repeated multi-block reads failed.
@@ -34,10 +35,11 @@ results and fixes that can be offered to the PR.
 | `tests/sdcard_hw` | Qualification app for a real Pi 3A+: data integrity, sizes, bounds, concurrency, speed, soak ([TESTING.md](docs/TESTING.md)) |
 | `tests/sdhost_hw` | Reproduces the review's findings one by one on a real Pi 3A+ |
 | `tests/sdhost_review` | The driver against a register model of the controller (`native_sim`): findings 1-10 and 12, and the fix |
+| `tests/sd_bounds` | Zephyr's SD stack range checks against a fake controller (`native_sim`), including ranges that wrap |
 | `tests/hal_bcm2835` | Unit tests of the HAL headers |
 | `hal/include/hal` | Register access for the tests (SDHost, GPIO) |
 | `boards/raspberrypi/rpi_3a_plus` | The Pi 3A+ board, with the SDHost node |
-| `zephyr/patches.yml`, `zephyr/patches/` | PR #110196 and the fixes, applied by `west patch apply` |
+| `zephyr/patches.yml`, `zephyr/patches/` | PR #110196 and the fixes (the driver, the firmware mailbox and the SD stack's range check), applied by `west patch apply` |
 | `qemu/`, `scripts/run-qemu.sh` | Running the tests on QEMU's `raspi3ap` |
 | `docs/` | [TESTING.md](docs/TESTING.md), [UPSTREAM.md](docs/UPSTREAM.md), [CODING.md](docs/CODING.md), the [review](docs/reviews/pr110196-sdhost-review.md) and hardware logs |
 
