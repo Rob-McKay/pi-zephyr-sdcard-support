@@ -1,0 +1,208 @@
+From 6da4db1c362137cdce04bab1c9483d4c50ba6879 Mon Sep 17 00:00:00 2001
+From: Your Name <you@example.com>
+Date: Thu, 22 Oct 2026 16:25:56 +0000
+Subject: [PATCH] tests: sd: add test for read/write range checks
+
+Add a test that runs the SD stack's block read and write calls against a
+fake SD host controller, which records the data transfers that reach it.
+Ranges within the card must reach the controller; ranges starting at or
+running past the end of the card, including ranges whose end wraps past
+block 0xffffffff, must be refused with -EINVAL before reaching it.
+
+The existing tests/subsys/sd/sdmmc test only checks that such requests
+fail, which a real card does on its own by rejecting the address, so it
+cannot tell whether the stack's check worked. This test needs no
+hardware and runs on native_sim.
+---
+ tests/subsys/sd/bounds/CMakeLists.txt |   7 ++
+ tests/subsys/sd/bounds/README.txt     |   8 ++
+ tests/subsys/sd/bounds/prj.conf       |   2 +
+ tests/subsys/sd/bounds/src/main.c     | 121 ++++++++++++++++++++++++++
+ tests/subsys/sd/bounds/tests.yaml     |   9 ++
+ 5 files changed, 147 insertions(+)
+ create mode 100644 tests/subsys/sd/bounds/CMakeLists.txt
+ create mode 100644 tests/subsys/sd/bounds/README.txt
+ create mode 100644 tests/subsys/sd/bounds/prj.conf
+ create mode 100644 tests/subsys/sd/bounds/src/main.c
+ create mode 100644 tests/subsys/sd/bounds/tests.yaml
+
+diff --git a/tests/subsys/sd/bounds/CMakeLists.txt b/tests/subsys/sd/bounds/CMakeLists.txt
+new file mode 100644
+index 000000000..cce7b5924
+--- /dev/null
++++ b/tests/subsys/sd/bounds/CMakeLists.txt
+@@ -0,0 +1,7 @@
++# SPDX-License-Identifier: Apache-2.0
++
++cmake_minimum_required(VERSION 3.28.0)
++find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
++project(sd_bounds_test)
++
++target_sources(app PRIVATE src/main.c)
+diff --git a/tests/subsys/sd/bounds/README.txt b/tests/subsys/sd/bounds/README.txt
+new file mode 100644
+index 000000000..0d06a2a2b
+--- /dev/null
++++ b/tests/subsys/sd/bounds/README.txt
+@@ -0,0 +1,8 @@
++SD Stack Range Check Test
++#########################
++
++This test verifies that the SD stack refuses reads and writes that do not
++lie within the card before sending them to the SD host controller,
++including ranges whose end wraps past block 0xffffffff. It runs the stack
++against a fake host controller defined in the test, which records the
++data transfers that reach it, so it needs no hardware.
+diff --git a/tests/subsys/sd/bounds/prj.conf b/tests/subsys/sd/bounds/prj.conf
+new file mode 100644
+index 000000000..32e99f06d
+--- /dev/null
++++ b/tests/subsys/sd/bounds/prj.conf
+@@ -0,0 +1,2 @@
++CONFIG_ZTEST=y
++CONFIG_SDMMC_STACK=y
+diff --git a/tests/subsys/sd/bounds/src/main.c b/tests/subsys/sd/bounds/src/main.c
+new file mode 100644
+index 000000000..ef516d58b
+--- /dev/null
++++ b/tests/subsys/sd/bounds/src/main.c
+@@ -0,0 +1,121 @@
++/*
++ * Copyright The Zephyr Project Contributors
++ *
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++/*
++ * The SD stack must refuse a read or write that does not lie within the
++ * card before sending it to the host controller. A fake controller records
++ * the data transfers that reach it.
++ */
++
++#include <errno.h>
++#include <stdint.h>
++#include <string.h>
++
++#include <zephyr/device.h>
++#include <zephyr/drivers/sdhc.h>
++#include <zephyr/sd/sd.h>
++#include <zephyr/sd/sd_spec.h>
++#include <zephyr/sd/sdmmc.h>
++#include <zephyr/ztest.h>
++
++#define CARD_BLOCKS 1000U
++#define BLOCK_SIZE  512U
++
++static unsigned int transfers;
++static uint32_t last_block;
++static uint8_t buf[2U * BLOCK_SIZE] __aligned(4);
++static struct sd_card card;
++
++static int fake_request(const struct device *dev, struct sdhc_command *cmd, struct sdhc_data *data)
++{
++	ARG_UNUSED(dev);
++
++	if (data != NULL) {
++		transfers++;
++		last_block = data->block_addr;
++	}
++	/* Ready for data, in transfer state (answers CMD13) */
++	cmd->response[0] = SD_R1_RDY_DATA | (SDMMC_R1_TRANSFER << 9U);
++	return 0;
++}
++
++static int fake_card_busy(const struct device *dev)
++{
++	ARG_UNUSED(dev);
++
++	return 0;
++}
++
++/* Only the operations a read or write uses */
++static DEVICE_API(sdhc, fake_sdhc_api) = {
++	.request = fake_request,
++	.card_busy = fake_card_busy,
++};
++
++DEVICE_DEFINE(fake_sdhc, "fake_sdhc", NULL, NULL, NULL, NULL, POST_KERNEL, 0, &fake_sdhc_api);
++
++/* An initialized high capacity card of CARD_BLOCKS blocks */
++static void before(void *f)
++{
++	ARG_UNUSED(f);
++
++	memset(&card, 0, sizeof(card));
++	card.sdhc = DEVICE_GET(fake_sdhc);
++	card.block_count = CARD_BLOCKS;
++	card.block_size = BLOCK_SIZE;
++	card.type = CARD_SDMMC;
++	card.flags = SD_HIGH_CAPACITY_FLAG;
++	k_mutex_init(&card.lock);
++	transfers = 0;
++	last_block = 0;
++}
++
++static void expect_read_sent(uint32_t start, uint32_t count)
++{
++	transfers = 0;
++	zassert_ok(sdmmc_read_blocks(&card, buf, start, count), "read %u+%u", start, count);
++	zassert_equal(transfers, 1U, "read %u+%u: %u transfers", start, count, transfers);
++	zassert_equal(last_block, start);
++}
++
++static void expect_refused(uint32_t start, uint32_t count)
++{
++	zassert_equal(sdmmc_read_blocks(&card, buf, start, count), -EINVAL, "read %u+%u", start,
++		      count);
++	zassert_equal(sdmmc_write_blocks(&card, buf, start, count), -EINVAL, "write %u+%u", start,
++		      count);
++	zassert_equal(transfers, 0U, "%u+%u reached the controller", start, count);
++}
++
++ZTEST(sd_bounds, test_in_range)
++{
++	expect_read_sent(0, 1);
++	expect_read_sent(CARD_BLOCKS - 1U, 1);
++	expect_read_sent(CARD_BLOCKS - 2U, 2);
++
++	transfers = 0;
++	zassert_ok(sdmmc_write_blocks(&card, buf, CARD_BLOCKS - 1U, 1));
++	zassert_equal(transfers, 1U);
++	zassert_equal(last_block, CARD_BLOCKS - 1U);
++}
++
++ZTEST(sd_bounds, test_past_end)
++{
++	expect_refused(CARD_BLOCKS, 1);
++	expect_refused(CARD_BLOCKS - 1U, 2);
++	expect_refused(0, CARD_BLOCKS + 1U);
++}
++
++/* start + count wraps past 0xffffffff to a value within the card */
++ZTEST(sd_bounds, test_wrapping_range)
++{
++	expect_refused(UINT32_MAX, 1);
++	expect_refused(UINT32_MAX, 2);
++	expect_refused(0xfffffff0U, 0x20U);
++	expect_refused(1, UINT32_MAX);
++}
++
++ZTEST_SUITE(sd_bounds, NULL, NULL, before, NULL, NULL);
+diff --git a/tests/subsys/sd/bounds/tests.yaml b/tests/subsys/sd/bounds/tests.yaml
+new file mode 100644
+index 000000000..922f701eb
+--- /dev/null
++++ b/tests/subsys/sd/bounds/tests.yaml
+@@ -0,0 +1,9 @@
++tests:
++  sd.bounds:
++    platform_allow:
++      - native_sim
++      - native_sim/native/64
++    integration_platforms:
++      - native_sim
++    tags:
++      - sd
+-- 
+2.43.0
+
