@@ -17,7 +17,7 @@ results and fixes that can be offered to the PR.
   multi-block read that runs on into the next block (finding 12), and a
   failed one (finding 2 for reads). `sdhost-busy-timeouts.patch` waits as
   long as the spec allows for a card's busy after a write or erase
-  (finding 1; not yet rerun on the Pi).
+  (finding 1).
 - **On a real Pi 3A+ with a 64 GB SDXC card, with the fix** (21 October
   2026, [log](docs/reviews/logs/2026-10-21-sd-qual-pi3a-sdxc64-run8-corrected.log)):
   every qualification test passed except finding 4 (a 314 ms data timeout)
@@ -27,10 +27,13 @@ results and fixes that can be offered to the PR.
   No run-ons in over 100,000 multi-block reads; a 10-minute soak wrote
   3.7 GB and read 4.2 GB. Reads reach 23.6 MB/s, writes 18.7 MB/s.
   Without the fix, every test that repeated multi-block reads failed.
-- **A 2 GB card** (ninth run, reads only): reads all good, but Zephyr's SD
-  stack left the bus 1 bit wide (3.1 MB/s), because it only widened the
-  bus for High Speed cards. Not the driver's bug; fixed here
-  (`sdmmc-4bit-without-hs.patch`), not yet rerun on the Pi.
+- **A 2 GB card, with all six patches** (22 October 2026,
+  [log](docs/reviews/logs/2026-10-22-sd-qual-pi3a-sd2gb-run11.log)):
+  **every test passed**, soak included. Zephyr's SD stack had left this
+  card's bus 1 bit wide (3.1 MB/s); with `sdmmc-4bit-without-hs.patch` it
+  runs at 4 bits, 12.0 MB/s reads and 10.5 MB/s writes. Its writes stay
+  busy for up to 359 ms, which failed them before
+  `sdhost-busy-timeouts.patch` (finding 1).
 - **Zephyr's own suites** on the same Pi and card: `sdhc` 5/5,
   `disk_access` 3/3.
 - **Not posted upstream** yet ([UPSTREAM.md](docs/UPSTREAM.md)).

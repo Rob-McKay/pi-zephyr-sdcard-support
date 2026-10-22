@@ -58,7 +58,7 @@ R1b commands issued by the SD stack (lines 599-608) are bounded the same way, by
 - For R1b commands, use at least the spec's busy limits.
 - On timeout, recover (finding 2).
 
-**Fixed here** by `zephyr/patches/zephyr/sdhost-busy-timeouts.patch`: the stop after a write waits the data timeout and at least 500 ms; other busy (R1b) commands at least 500 ms, and an erase at least 10 s (the driver isn't told how much is erased; the SD stack waits up to its 10 s data timeout for an erase anyway). The wait ends as soon as the card releases DAT0, so a card that isn't slow costs no more; a dead card is still cut off. The recovery after a timeout is finding 2's, not part of this fix. `tests/sdhost_review` checks a 250 ms and a 490 ms write busy, a 2 s erase and a 400 ms R1b busy (all failed before), and that an endless busy still times out. Not yet rerun on the Pi. With finding 6 still open, the longer waits are still spent spinning on the CPU.
+**Fixed here** by `zephyr/patches/zephyr/sdhost-busy-timeouts.patch`: the stop after a write waits the data timeout and at least 500 ms; other busy (R1b) commands at least 500 ms, and an erase at least 10 s (the driver isn't told how much is erased; the SD stack waits up to its 10 s data timeout for an erase anyway). The wait ends as soon as the card releases DAT0, so a card that isn't slow costs no more; a dead card is still cut off. The recovery after a timeout is finding 2's, not part of this fix. `tests/sdhost_review` checks a 250 ms and a 490 ms write busy, a 2 s erase and a 400 ms R1b busy (all failed before), and that an endless busy still times out. **Confirmed on the Pi** (eleventh run): the 2 GB card's writes now pass, with busy of up to 359 ms. With finding 6 still open, the longer waits are still spent spinning on the CPU.
 
 ### 2. No recovery after an error or timeout (High)
 
@@ -481,6 +481,17 @@ So far finding 12 has struck in all nine tests that repeat multi-block reads, ac
 | Speed (1 bit, 25 MHz) | Sequential reads to 3.1 MB/s, writes to 3.1 MB/s; random 4 KB reads 546/s |
 | Concurrency | All data right, 128 s (22 s on the SDXC card at 4 bits and 50 MHz); the lower-priority thread ran 0 times (finding 6) |
 
+**Eleventh run, with all six patches**, 22 October 2026, the same 2 GB card ([log](logs/2026-10-22-sd-qual-pi3a-sd2gb-run11.log)). **Every test passed**, the first run with no failure at all: 37 tests, a 600 s soak and its final verify, and no recovery.
+
+| Area | Result |
+|---|---|
+| **Bus width** (`sdmmc-4bit-without-hs.patch`) | 4 bits at 25 MHz (Default Speed: the card has no High Speed). Sequential reads 3.1 → **12.0 MB/s**, writes 3.1 → **10.5 MB/s**, the multi-block stress test 3.0 → 10.9 MB/s: four times faster, as expected, and close to the 12.5 MB/s Default Speed limit |
+| **Finding 1** (`sdhost-busy-timeouts.patch`) | No write or erase failed (five writes and an erase failed in the tenth run). **The card needed the longer wait**: random 4 KB writes took 232 ms on average and up to **359 ms**, nearly all of it busy after CMD12. That is past the old 100 ms wait, and past the 250 ms the spec allows a card of this size ([PLS §4.6.2.2](#ref-write)), but within the 500 ms the spec recommends hosts allow every card, which the fix uses. 4 random writes a second (546 reads a second): this card is slow at small scattered writes, not the driver |
+| Erase | The 8-block erase that failed before passed; 8 MB in 23 ms |
+| Soak | 600 s: 2,625 writes (200 MB), 3,113 reads (240 MB), 191 erases, every read checked; final verify passed. About 0.35 MB/s, set by the card's random-write busy |
+| Concurrency | All data right, 70 s (128 s at 1 bit); the lower-priority thread ran 0 times (finding 6) |
+| Firmware | `zephyr.bin` CRC-32 `b5cf7b4a`. It differs from the `f13d98ee` built in the development container, so these builds are not byte-for-byte reproducible across machines; the results show both fixes are in |
+
 **Zephyr's own suites**, as the PR reports them (`make sd-zephyr-hw-test`), same Pi and card ([log](logs/2026-10-20-zephyr-sdhc-disk_access-pi3a-sdxc64.log)):
 
 | Suite | Result |
@@ -538,8 +549,8 @@ Card timings above are from the SD Association's **SD Specifications Part 1, Phy
   Speed card stayed 1 bit wide at a quarter of the speed (ninth run, 2 GB
   card). Fixed by `sdmmc-4bit-without-hs.patch`, tested by
   `tests/sd_bus_width`. A Zephyr SD stack fix, not the driver's.
-- [ ] **Rerun the 2 GB card with that fix**, with the test image written
-  to it, to see 4 bits on the Pi and run the write tests.
+- [x] **Rerun the 2 GB card with that fix**, with the test image written
+  to it (eleventh run): 4 bits, four times the speed, every test passed.
 - [ ] **Read FAT16 in the qualification harness**, so a card with its
   factory FAT16 partition (most cards of 2 GB or less) gets its boot
   partition checked; or write the test image to such cards, as
