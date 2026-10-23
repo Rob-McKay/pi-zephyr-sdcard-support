@@ -1,0 +1,24 @@
+sd: sd_ops: make read/write range check overflow-aware
+
+card_read_blocks() and card_write_blocks() checked the range with
+(start_block + num_blocks) > card->block_count in 32 bits. For a range
+ending past block 0xffffffff the sum wraps to a small value, so the
+request passes the check and is sent to the card; only the card's
+out-of-range error stops it. In the unaligned-buffer path a later
+chunk's address would wrap to block 0.
+
+Use the overflow-aware form card_erase_blocks() already uses.
+
+Add tests/subsys/sd/bounds, which runs the SD stack's block read and
+write calls against a fake SD host controller that records the data
+transfers reaching it: ranges within the card must reach it, and ranges
+starting at or running past the end of the card, including ranges whose
+end wraps past block 0xffffffff, must be refused with -EINVAL first. It
+needs no hardware and runs on native_sim. tests/subsys/sd/sdmmc only
+checks that such requests fail, which a real card does on its own by
+rejecting the address, so it cannot tell whether the check worked.
+
+Found on a Raspberry Pi 3A+ (BCM283x SDHost): a read of block
+0xffffffff reached the card instead of returning -EINVAL.
+
+Signed-off-by: Rob McKay <16419309+Rob-McKay@users.noreply.github.com>
