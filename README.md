@@ -36,7 +36,10 @@ results and fixes that can be offered to the PR.
   `sdhost-busy-timeouts.patch` (finding 1).
 - **Zephyr's own suites** on the same Pi and card: `sdhc` 5/5,
   `disk_access` 3/3.
-- **Not posted upstream** yet ([UPSTREAM.md](docs/UPSTREAM.md)).
+- **Upstream:** the SD stack's range-check fix is Zephyr PR
+  [#123216](https://github.com/zephyrproject-rtos/zephyr/pull/123216), open
+  and awaiting review; the rest isn't posted yet
+  ([UPSTREAM.md](docs/UPSTREAM.md)).
 
 ## Layout
 

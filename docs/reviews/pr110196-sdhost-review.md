@@ -449,7 +449,7 @@ So far finding 12 has struck in all nine tests that repeat multi-block reads, ac
 | Erase | 8 MB in 13 ms, verified |
 | Concurrency | All data right, 19.1 s; the lower-priority thread ran 0 times (finding 6) |
 
-**Ninth run, with the SD stack's range-check fix** (`sd-ops-bounds-overflow.patch`), 21 October 2026, on two cards.
+**Ninth run, with the SD stack's range-check fix** (`sd-ops-bounds-overflow.patch`, since sent to Zephyr as [#123216](https://github.com/zephyrproject-rtos/zephyr/pull/123216)), 21 October 2026, on two cards.
 
 *The same 64 GB SDXC card* ([log](logs/2026-10-21-sd-qual-pi3a-sdxc64-run9.log)): as the eighth run, and now `test_4_wrapping_range_refused` passes on hardware: the read of block 0xffffffff is refused before it reaches the card. Only finding 4's check failed (SDTOUT 314 ms at 50 MHz).
 
