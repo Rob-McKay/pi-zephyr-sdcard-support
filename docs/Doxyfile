@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Rob McKay
+# SPDX-License-Identifier: Apache-2.0
 # Doxygen configuration for the documentation check (scripts/check-docs.py),
 # which reads the XML output: every function, its parameters and its return
 # value must be documented. Run from the repository root.
@@ -8,12 +10,11 @@ GENERATE_LATEX         = NO
 GENERATE_XML           = YES
 XML_PROGRAMLISTING     = NO
 QUIET                  = YES
-INPUT                  = hal/include tests/sdhost_review/src tests/sdhost_hw/src \
-                         tests/sdcard_hw/src tests/sd_bounds/src \
-                         tests/sd_bus_width/src tests/hal_bcm2835/src \
-                         scripts/check-docs.py scripts/check-coverage.py
+INPUT                  = .
 FILE_PATTERNS          = *.c *.h *.py
 RECURSIVE              = YES
+# Build output, documents, and the patches and files sent to Zephyr.
+EXCLUDE                = build out docs upstream zephyr .git
 EXTRACT_ALL            = YES
 EXTRACT_STATIC         = YES
 EXTRACT_PRIVATE        = YES
@@ -36,11 +37,13 @@ PREDEFINED             = "ZTEST(s,n)=void s##_##n(void)" \
                          "BUILD_ASSERT(...)=" \
                          "DEVICE_API(t,n)=const struct t##_driver_api n" \
                          "DEVICE_DEFINE(...)=" \
+                         "DEVICE_DT_DEFINE(...)=" \
                          "ETH_NET_DEVICE_INIT(...)=" \
                          "K_CONDVAR_DEFINE(...)=" \
                          "K_EVENT_DEFINE(...)=" \
                          "K_MUTEX_DEFINE(...)=" \
                          "K_MEM_SLAB_DEFINE_STATIC(...)=" \
+                         "K_MSGQ_DEFINE_STATIC_TYPE(...)=" \
                          "K_SEM_DEFINE(...)=" \
                          "K_THREAD_DEFINE(...)=" \
                          "K_THREAD_STACK_ARRAY_DEFINE(...)=" \

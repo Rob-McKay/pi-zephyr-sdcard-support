@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Rob McKay
 # SPDX-License-Identifier: Apache-2.0
 #
 # SD card qualification on a real Raspberry Pi 3A+: the SDHost driver from

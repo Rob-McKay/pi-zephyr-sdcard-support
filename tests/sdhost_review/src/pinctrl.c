@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026 Rob McKay
  * SPDX-License-Identifier: Apache-2.0
  *
  * Finding 7 of docs/reviews/pr110196-sdhost-review.md: the PR's SDHost pins
@@ -23,6 +24,9 @@
 
 #define GPIO_BASE DT_REG_ADDR(DT_NODELABEL(fake_pinctrl))
 
+/* The fake GPIO block and its write log: only the driver's register hooks
+ * and before() change them; the tests read them.
+ */
 static uint32_t gpio_regs[0xf4 / 4];
 static struct {
 	uint32_t off, val;
@@ -39,7 +43,7 @@ static uint32_t fake_gpio_read32(uintptr_t addr)
 {
 	uint32_t off = addr - GPIO_BASE;
 
-	zassert_true(off < sizeof(gpio_regs), "read outside the GPIO block: 0x%x", off);
+	zassert_true((off < sizeof(gpio_regs)), "read outside the GPIO block: 0x%x", off);
 	return gpio_regs[off / 4];
 }
 
@@ -48,12 +52,15 @@ static uint32_t fake_gpio_read32(uintptr_t addr)
  *
  * @param val Value written.
  * @param addr Register address.
+ *
+ * @par Global state
+ * Changes @c gpio_regs, @c gpio_log and @c gpio_nlog.
  */
 static void fake_gpio_write32(uint32_t val, uintptr_t addr)
 {
 	uint32_t off = addr - GPIO_BASE;
 
-	zassert_true(off < sizeof(gpio_regs), "write outside the GPIO block: 0x%x", off);
+	zassert_true((off < sizeof(gpio_regs)), "write outside the GPIO block: 0x%x", off);
 	gpio_regs[off / 4] = val;
 	if (gpio_nlog < (int)ARRAY_SIZE(gpio_log)) {
 		gpio_log[gpio_nlog].off = off;
@@ -85,6 +92,9 @@ static const pinctrl_soc_pin_t sd_cmd_pin = {
  * @brief Clear the fake GPIO block and its write log before each test.
  *
  * @param f Unused fixture.
+ *
+ * @par Global state
+ * Changes @c gpio_regs and @c gpio_nlog.
  */
 static void before(void *f)
 {
@@ -115,7 +125,7 @@ static bool wrote(uint32_t off, uint32_t mask, uint32_t val)
 ZTEST(pinctrl_sanity, test_function_select)
 {
 	zassert_ok(pinctrl_configure_pins(&sd_cmd_pin, 1, 0));
-	zassert_equal((gpio_regs[0x10 / 4] >> 27) & 0x7, BCM2711_FSEL_ALT0);
+	zassert_equal(((gpio_regs[0x10 / 4] >> 27) & 0x7), BCM2711_FSEL_ALT0);
 }
 
 ZTEST_SUITE(pinctrl_sanity, NULL, NULL, before, NULL, NULL);
@@ -126,12 +136,13 @@ ZTEST(pinctrl_review, test_f7_pull_up_uses_bcm2837_registers)
 	zassert_ok(pinctrl_configure_pins(&sd_cmd_pin, 1, 0));
 
 	for (int i = 0; i < gpio_nlog; i++) {
-		zassert_true(gpio_log[i].off < BCM2711_PUPPDN,
+		zassert_true((gpio_log[i].off < BCM2711_PUPPDN),
 			     "write to 0x%x, a BCM2711-only pull register (no such register on "
-			     "the BCM2837)", gpio_log[i].off);
+			     "the BCM2837)",
+			     gpio_log[i].off);
 	}
 	zassert_true(wrote(GPPUD, 0x3, GPPUD_PULL_UP), "GPPUD never set to pull-up");
-	zassert_true(wrote(GPPUDCLK1, BIT(49 - 32), BIT(49 - 32)), "GPPUDCLK1 never clocked");
+	zassert_true(wrote(GPPUDCLK1, BIT((49 - 32)), BIT((49 - 32))), "GPPUDCLK1 never clocked");
 }
 
 ZTEST_EXPECT_FAIL(pinctrl_review, test_f7_pull_up_uses_bcm2837_registers);

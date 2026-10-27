@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright (c) 2026 Rob McKay
+# SPDX-License-Identifier: Apache-2.0
 # Zephyr's own SD tests on the emulated Pi 3A+ (QEMU raspi3ap), with a
 # scratch card image on the SD bus. Exercises the BCM283x SDHost driver
 # (Zephyr PR #110196, applied by zephyr/patches.yml) through the rpi_3a_plus

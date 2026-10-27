@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026 Rob McKay
  * SPDX-License-Identifier: Apache-2.0
  *
  * Shared state and helpers of the SD card qualification suites: the disk,
@@ -28,29 +29,44 @@
 /** Blocks in the scratch area. */
 #define SDQ_SCRATCH_BLOCKS ((uint32_t)CONFIG_SDCARD_HW_SCRATCH_MB * 2048U)
 
-/** Write and read buffers, SDQ_MAX_BLOCKS blocks plus room to misalign. */
-extern uint8_t sdq_wbuf[];
-extern uint8_t sdq_rbuf[];
-
-/** What the suites know about the card. */
-struct sdq_card {
+/**
+ * What the suites know about the card, and the buffers they share: the
+ * fixture sdq_setup() gives every suite.
+ *
+ * A suite with no state of its own uses it as its fixture type, with
+ * "#define <suite>_fixture sdq" ahead of its tests; one with state of its
+ * own has a fixture holding a pointer to it, and calls sdq_before() and
+ * sdq_after() with that pointer.
+ */
+struct sdq {
 	uint32_t sectors;     /**< capacity in blocks */
 	uint32_t sector_size; /**< block size the disk reports */
 	uint32_t scratch;     /**< first block of the scratch area */
-	bool scratch_ok;      /**< the write tests may use it */
-	const char *why;      /**< why not, if not */
 	uint32_t seed;        /**< random seed of this run */
 	uint32_t recoveries;  /**< times a test found the card unusable */
 	uint32_t recovery_failures; /**< times recovering it didn't work */
-};
+	const char *why;            /**< why the scratch area can't be written, if not */
+	uintptr_t sdhost;           /**< the SDHost registers, mapped */
+	bool scratch_ok;            /**< the write tests may use the scratch area */
+	bool ready;                 /**< set up */
 
-extern struct sdq_card sdq;
+	/** Block 0 as read at setup: the health check compares against it. */
+	uint8_t block0[SDQ_BLK] __aligned(4);
+	/** A block for setup and the health check to read into. */
+	uint8_t blk[SDQ_BLK] __aligned(4);
+	/** Write and read buffers, SDQ_MAX_BLOCKS blocks plus room to misalign. */
+	uint8_t wbuf[(SDQ_MAX_BLOCKS * SDQ_BLK) + 64] __aligned(64);
+	uint8_t rbuf[(SDQ_MAX_BLOCKS * SDQ_BLK) + 64] __aligned(64);
+};
 
 /**
  * @brief Suite setup shared by every suite: initialise the disk and, once,
  *        decide whether the scratch area may be written.
  *
- * @return NULL (no fixture).
+ * @return The shared struct sdq.
+ *
+ * @par Global state
+ * Changes the shared struct sdq (common.c's @c sdq).
  */
 void *sdq_setup(void);
 
@@ -61,7 +77,7 @@ void *sdq_setup(void);
  * Never fails: ztest would report the test as skipped. If recovery
  * doesn't work, it says so and the test fails on the card.
  *
- * @param f Unused fixture.
+ * @param f The struct sdq.
  */
 void sdq_before(void *f);
 
@@ -72,8 +88,12 @@ void sdq_before(void *f);
  */
 void sdq_after(void *f);
 
-/** @brief Skip the test unless the scratch area may be written. */
-void sdq_need_scratch(void);
+/**
+ * @brief Skip the test unless the scratch area may be written.
+ *
+ * @param q The card.
+ */
+void sdq_need_scratch(const struct sdq *q);
 
 /**
  * @brief Fill blocks with pattern data.
@@ -93,7 +113,8 @@ void sdq_fill(uint8_t *p, uint32_t lba, uint32_t blocks, uint32_t gen);
  * @brief Check blocks against the pattern they should hold.
  *
  * Prints what the first bad block holds instead (another block's data,
- * an older generation, erased or unknown data).
+ * an older generation, erased or unknown data). Safe to call from several
+ * threads at once.
  *
  * @param p Buffer of @p blocks blocks.
  * @param lba Block number of the first block.
@@ -108,11 +129,12 @@ int sdq_check(const uint8_t *p, uint32_t lba, uint32_t blocks, uint32_t gen);
  * @brief Write and read back blocks of the scratch area through the disk
  *        API, asserting both succeed and the data matches.
  *
+ * @param[in,out] q The card; its buffers are used.
  * @param lba First block.
  * @param blocks Block count, at most SDQ_MAX_BLOCKS.
  * @param gen Generation to write.
  */
-void sdq_write_verify(uint32_t lba, uint32_t blocks, uint32_t gen);
+void sdq_write_verify(struct sdq *q, uint32_t lba, uint32_t blocks, uint32_t gen);
 
 /**
  * @brief Next number from the run's random generator (xorshift32).
@@ -146,13 +168,6 @@ uint32_t sdq_kbps(uint64_t bytes, uint64_t us);
  * @return True if every byte is @p value.
  */
 bool sdq_block_is(const uint8_t *p, uint8_t value);
-
-/**
- * @brief Give the SDHost registers' address, mapping them on first use.
- *
- * @return Virtual base address.
- */
-uintptr_t sdq_sdhost_regs(void);
 
 /**
  * @brief Ask the firmware for the VPU core clock, the SDHost's input.

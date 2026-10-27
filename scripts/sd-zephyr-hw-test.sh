@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright (c) 2026 Rob McKay
+# SPDX-License-Identifier: Apache-2.0
 # Zephyr's own SD tests that PR #110196 reports passing on a Pi Zero 2 W,
 # built for a real Raspberry Pi 3A+: one card image each. Runs inside the
 # Docker image. See docs/TESTING.md.

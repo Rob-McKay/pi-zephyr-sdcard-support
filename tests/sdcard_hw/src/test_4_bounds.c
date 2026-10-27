@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026 Rob McKay
  * SPDX-License-Identifier: Apache-2.0
  *
  * Suite 4: the ends of the card. The last blocks read and write; requests
@@ -10,34 +11,38 @@
 
 #include "common.h"
 
+/* The suite's fixture is the shared card (common.h). */
+#define sdcard_4_bounds_fixture sdq
+
 /** @brief The first blocks of the card (MBR, partition start) read, twice the same. */
-ZTEST(sdcard_4_bounds, test_1_first_blocks)
+ZTEST_F(sdcard_4_bounds, test_1_first_blocks)
 {
-	zassert_ok(disk_access_read(SDQ_DISK, sdq_rbuf, 0, 64));
-	zassert_ok(disk_access_read(SDQ_DISK, sdq_wbuf, 0, 64));
-	zassert_mem_equal(sdq_rbuf, sdq_wbuf, (size_t)64U * SDQ_BLK, "two reads of blocks 0-63 differ");
+	zassert_ok(disk_access_read(SDQ_DISK, fixture->rbuf, 0, 64));
+	zassert_ok(disk_access_read(SDQ_DISK, fixture->wbuf, 0, 64));
+	zassert_mem_equal(fixture->rbuf, fixture->wbuf, ((size_t)64U * SDQ_BLK),
+			  "two reads of blocks 0-63 differ");
 }
 
 /** @brief The very last block, and the last 64 blocks, read and write. */
-ZTEST(sdcard_4_bounds, test_2_last_blocks)
+ZTEST_F(sdcard_4_bounds, test_2_last_blocks)
 {
-	sdq_need_scratch();
-	sdq_write_verify(sdq.sectors - 1U, 1, 0x40000U);
-	sdq_write_verify(sdq.sectors - 64U, 64, 0x40001U);
+	sdq_need_scratch(fixture);
+	sdq_write_verify(fixture, fixture->sectors - 1U, 1, 0x40000U);
+	sdq_write_verify(fixture, fixture->sectors - 64U, 64, 0x40001U);
 }
 
 /** @brief Reads and writes that run past the end are refused (-EINVAL) before reaching the card. */
-ZTEST(sdcard_4_bounds, test_3_past_the_end_refused)
+ZTEST_F(sdcard_4_bounds, test_3_past_the_end_refused)
 {
-	zassert_equal(disk_access_read(SDQ_DISK, sdq_rbuf, sdq.sectors, 1), -EINVAL,
+	zassert_equal(disk_access_read(SDQ_DISK, fixture->rbuf, fixture->sectors, 1), -EINVAL,
 		      "read of the block after the last");
-	zassert_equal(disk_access_read(SDQ_DISK, sdq_rbuf, sdq.sectors - 1U, 2), -EINVAL,
+	zassert_equal(disk_access_read(SDQ_DISK, fixture->rbuf, fixture->sectors - 1U, 2), -EINVAL,
 		      "read across the end");
-	if (sdq.scratch_ok) {
-		zassert_equal(disk_access_write(SDQ_DISK, sdq_wbuf, sdq.sectors - 1U, 2), -EINVAL,
-			      "write across the end");
+	if (fixture->scratch_ok) {
+		zassert_equal(disk_access_write(SDQ_DISK, fixture->wbuf, fixture->sectors - 1U, 2),
+			      -EINVAL, "write across the end");
 	}
-	zassert_ok(disk_access_read(SDQ_DISK, sdq_rbuf, sdq.sectors - 1U, 1),
+	zassert_ok(disk_access_read(SDQ_DISK, fixture->rbuf, fixture->sectors - 1U, 1),
 		   "the last block no longer reads after the refused requests");
 }
 
@@ -51,11 +56,11 @@ ZTEST(sdcard_4_bounds, test_3_past_the_end_refused)
  * error stops it. zephyr/patches/zephyr/sd-ops-bounds-overflow.patch makes
  * the check overflow-aware, as the erase check already is.
  */
-ZTEST(sdcard_4_bounds, test_4_wrapping_range_refused)
+ZTEST_F(sdcard_4_bounds, test_4_wrapping_range_refused)
 {
-	int ret = disk_access_read(SDQ_DISK, sdq_rbuf, UINT32_MAX, 1);
+	int ret = disk_access_read(SDQ_DISK, fixture->rbuf, UINT32_MAX, 1);
 
-	zassert_ok(disk_access_read(SDQ_DISK, sdq_rbuf, sdq.sectors - 1U, 1),
+	zassert_ok(disk_access_read(SDQ_DISK, fixture->rbuf, fixture->sectors - 1U, 1),
 		   "the last block no longer reads after a read of block 0xffffffff (%d)", ret);
 	zassert_equal(ret, -EINVAL,
 		      "read of block 0xffffffff went to the card (%d): the SD stack's bounds "
@@ -64,10 +69,10 @@ ZTEST(sdcard_4_bounds, test_4_wrapping_range_refused)
 }
 
 /** @brief Reading the whole card's address range in 1 MB steps (a block each) works. */
-ZTEST(sdcard_4_bounds, test_5_whole_range_sampled)
+ZTEST_F(sdcard_4_bounds, test_5_whole_range_sampled)
 {
-	for (uint32_t lba = 0; lba < sdq.sectors; lba += 2048U) {
-		zassert_ok(disk_access_read(SDQ_DISK, sdq_rbuf, lba, 1), "block %u", lba);
+	for (uint32_t lba = 0; lba < fixture->sectors; lba += 2048U) {
+		zassert_ok(disk_access_read(SDQ_DISK, fixture->rbuf, lba, 1), "block %u", lba);
 	}
 }
 

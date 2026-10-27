@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026 Rob McKay
  * SPDX-License-Identifier: Apache-2.0
  *
  * Zephyr's SD stack switches a card to a 4-bit bus in sdmmc_init_hs()
@@ -53,9 +54,17 @@ struct fake_record {
 	struct sdhc_io io;
 };
 
-static struct fake_config cfg;
-static struct fake_record rec;
-static struct sd_card card;
+/** The fake controller's device data: what it supports and what it saw. */
+struct fake_sdhc {
+	struct fake_config cfg;
+	struct fake_record rec;
+};
+
+/** The tests' state. */
+struct sd_bus_width_fixture {
+	struct fake_sdhc *fake; /* the fake controller's data */
+	struct sd_card card;
+};
 
 /** @brief R1 card status: ready for data, in transfer state. @return The status. */
 static uint32_t r1_tran(void)
@@ -81,12 +90,13 @@ static uint8_t *clear_data(struct sdhc_data *data)
 /**
  * @brief Answer an application command (one following CMD55).
  *
+ * @param[in,out] f The fake controller's data.
  * @param[in,out] cmd The command; its response is filled in.
  * @param[out] data The data phase, or NULL.
  * @retval 0 Answered.
  * @retval -EINVAL An SCR read without a data block.
  */
-static int fake_app_command(struct sdhc_command *cmd, struct sdhc_data *data)
+static int fake_app_command(struct fake_sdhc *f, struct sdhc_command *cmd, struct sdhc_data *data)
 {
 	uint8_t *buf = clear_data(data);
 
@@ -104,13 +114,13 @@ static int fake_app_command(struct sdhc_command *cmd, struct sdhc_data *data)
 			return -EINVAL;
 		}
 		buf[0] = 0x02U;
-		buf[1] = (uint8_t)(0x30U | cfg.card_widths);
+		buf[1] = (uint8_t)(0x30U | f->cfg.card_widths);
 		buf[2] = 0x80U;
 		cmd->response[0] = r1_tran();
 		break;
 	case SD_APP_SET_BUS_WIDTH:
-		rec.acmd6_count++;
-		rec.acmd6_arg = cmd->arg;
+		f->rec.acmd6_count++;
+		f->rec.acmd6_arg = cmd->arg;
 		cmd->response[0] = r1_tran();
 		break;
 	default:
@@ -126,16 +136,17 @@ static int fake_app_command(struct sdhc_command *cmd, struct sdhc_data *data)
  * Function group 1 (bus speed) reports Default Speed, and High Speed if
  * the card supports it; a switch to High Speed reports it selected.
  *
+ * @param card_hs The card supports High Speed.
  * @param arg The CMD6 argument.
  * @param[out] status The 64-byte status block.
  */
-static void fake_switch_status(uint32_t arg, uint8_t *status)
+static void fake_switch_status(bool card_hs, uint32_t arg, uint8_t *status)
 {
 	memset(status, 0, 64);
 	/* Bits 415:400: group 1 support, big-endian, so byte 13 is bits 407:400. */
-	status[13] = cfg.card_hs ? 0x03U : 0x01U;
+	status[13] = card_hs ? 0x03U : 0x01U;
 	/* Bits 379:376: group 1 function selected (0xf: no change). */
-	if ((arg & BIT(31)) != 0U && (arg & 0xfU) == 1U && cfg.card_hs) {
+	if ((arg & BIT(31)) != 0U && (arg & 0xfU) == 1U && card_hs) {
 		status[16] = 0x01U;
 	} else {
 		status[16] = 0x00U;
@@ -158,7 +169,7 @@ static void fake_csd(uint32_t *response)
 /**
  * @brief The fake controller's request handler: the fake card's answers.
  *
- * @param dev Unused.
+ * @param dev The fake controller; its data is the struct fake_sdhc.
  * @param[in,out] cmd The command; its response is filled in.
  * @param[out] data The data phase, or NULL.
  * @retval 0 Answered.
@@ -167,10 +178,11 @@ static void fake_csd(uint32_t *response)
 static int fake_request(const struct device *dev, struct sdhc_command *cmd,
 			struct sdhc_data *data)
 {
-	ARG_UNUSED(dev);
-	if (rec.app_cmd) {
-		rec.app_cmd = false;
-		return fake_app_command(cmd, data);
+	struct fake_sdhc *f = dev->data;
+
+	if (f->rec.app_cmd) {
+		f->rec.app_cmd = false;
+		return fake_app_command(f, cmd, data);
 	}
 	memset(cmd->response, 0, sizeof(cmd->response));
 	switch (cmd->opcode) {
@@ -180,7 +192,7 @@ static int fake_request(const struct device *dev, struct sdhc_command *cmd,
 		cmd->response[0] = cmd->arg & 0xfffU; /* echo: 3.3 V accepted */
 		break;
 	case SD_APP_CMD:
-		rec.app_cmd = true;
+		f->rec.app_cmd = true;
 		cmd->response[0] = (uint32_t)SD_R1_APP_CMD | r1_tran();
 		break;
 	case SD_ALL_SEND_CID:
@@ -196,7 +208,7 @@ static int fake_request(const struct device *dev, struct sdhc_command *cmd,
 		if (data == NULL) {
 			return -EINVAL;
 		}
-		fake_switch_status(cmd->arg, (uint8_t *)data->data);
+		fake_switch_status(f->cfg.card_hs, cmd->arg, (uint8_t *)data->data);
 		cmd->response[0] = r1_tran();
 		break;
 	default:
@@ -210,14 +222,15 @@ static int fake_request(const struct device *dev, struct sdhc_command *cmd,
 /**
  * @brief The fake controller's I/O settings: recorded.
  *
- * @param dev Unused.
+ * @param dev The fake controller; its data is the struct fake_sdhc.
  * @param io The settings.
  * @retval 0 Applied.
  */
 static int fake_set_io(const struct device *dev, struct sdhc_io *io)
 {
-	ARG_UNUSED(dev);
-	rec.io = *io;
+	struct fake_sdhc *f = dev->data;
+
+	f->rec.io = *io;
 	return 0;
 }
 
@@ -225,19 +238,20 @@ static int fake_set_io(const struct device *dev, struct sdhc_io *io)
  * @brief The fake controller's properties: 400 kHz to 50 MHz, 3.3 V, High
  *        Speed, and a 4-bit bus if the test says so.
  *
- * @param dev Unused.
+ * @param dev The fake controller; its data is the struct fake_sdhc.
  * @param[out] props The properties.
  * @retval 0 Filled in.
  */
 static int fake_get_host_props(const struct device *dev, struct sdhc_host_props *props)
 {
-	ARG_UNUSED(dev);
+	const struct fake_sdhc *f = dev->data;
+
 	memset(props, 0, sizeof(*props));
 	props->f_min = SDMMC_CLOCK_400KHZ;
 	props->f_max = SD_CLOCK_50MHZ;
 	props->host_caps.vol_330_support = true;
 	props->host_caps.high_spd_support = true;
-	props->bus_4_bit_support = cfg.host_4bit;
+	props->bus_4_bit_support = f->cfg.host_4bit;
 	return 0;
 }
 
@@ -286,73 +300,104 @@ static DEVICE_API(sdhc, fake_sdhc_api) = {
 	.get_host_props = fake_get_host_props,
 };
 
+/** The fake controller's device data. */
+static struct fake_sdhc fake_sdhc_data;
+
 /*
  * DEVICE_DEFINE's expansion ends in its own ';', so -Wpedantic flags the
  * ';' as extra. Nothing else is exempted.
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-DEVICE_DEFINE(fake_sdhc, "fake_sdhc", NULL, NULL, NULL, NULL, POST_KERNEL, 0, &fake_sdhc_api);
+DEVICE_DEFINE(fake_sdhc, "fake_sdhc", NULL, NULL, &fake_sdhc_data, NULL, POST_KERNEL, 0,
+	      &fake_sdhc_api);
 #pragma GCC diagnostic pop
 
 /**
  * @brief Initialise the fake card through the SD stack and check it is
  *        identified.
  *
+ * @param[in,out] fx The fixture.
  * @param card_hs The card supports High Speed.
  * @param card_widths SD_BUS_WIDTHS in its SCR.
  * @param host_4bit The host supports a 4-bit bus.
  */
-static void init_card(bool card_hs, uint8_t card_widths, bool host_4bit)
+static void init_card(struct sd_bus_width_fixture *fx, bool card_hs, uint8_t card_widths,
+		      bool host_4bit)
 {
-	cfg = (struct fake_config){
-		.card_hs = card_hs, .card_widths = card_widths, .host_4bit = host_4bit,
+	fx->fake->cfg = (struct fake_config){
+		.card_hs = card_hs,
+		.card_widths = card_widths,
+		.host_4bit = host_4bit,
 	};
-	memset(&rec, 0, sizeof(rec));
-	memset(&card, 0, sizeof(card));
-	zassert_ok(sd_init(DEVICE_GET(fake_sdhc), &card), "sd_init");
-	zassert_equal(card.type, CARD_SDMMC);
-	zassert_equal(card.block_count, (C_SIZE + 1U) * 1024U, "block count %u",
-		      card.block_count);
+	memset(&fx->fake->rec, 0, sizeof(fx->fake->rec));
+	memset(&fx->card, 0, sizeof(fx->card));
+	zassert_ok(sd_init(DEVICE_GET(fake_sdhc), &fx->card), "sd_init");
+	zassert_equal(fx->card.type, CARD_SDMMC);
+	zassert_equal(fx->card.block_count, ((C_SIZE + 1U) * 1024U), "block count %u",
+		      fx->card.block_count);
+}
+
+/**
+ * @brief Suite setup: the fixture, pointing at the fake controller's data.
+ *
+ * @return The fixture.
+ *
+ * @par Global state
+ * Changes @c fixture (its controller pointer).
+ */
+static void *setup(void)
+{
+	static struct sd_bus_width_fixture fixture;
+
+	fixture.fake = DEVICE_GET(fake_sdhc)->data;
+	return &fixture;
 }
 
 /** @brief A card without High Speed is switched to 4 bits, at Default Speed. */
-ZTEST(sd_bus_width, test_default_speed_card_gets_4bit)
+ZTEST_F(sd_bus_width, test_default_speed_card_gets_4bit)
 {
-	init_card(false, 0x5U, true);
-	zassert_equal(rec.acmd6_count, 1U, "ACMD6 sent %u times", rec.acmd6_count);
-	zassert_equal(rec.acmd6_arg, 2U, "ACMD6 argument %u, not 2 (4 bits)", rec.acmd6_arg);
-	zassert_equal(rec.io.bus_width, SDHC_BUS_WIDTH4BIT, "host bus width %d",
-		      rec.io.bus_width);
-	zassert_equal(rec.io.timing, SDHC_TIMING_LEGACY, "timing %d", rec.io.timing);
-	zassert_equal(rec.io.clock, SD_CLOCK_25MHZ, "clock %u", rec.io.clock);
+	init_card(fixture, false, 0x5U, true);
+	zassert_equal(fixture->fake->rec.acmd6_count, 1U, "ACMD6 sent %u times",
+		      fixture->fake->rec.acmd6_count);
+	zassert_equal(fixture->fake->rec.acmd6_arg, 2U, "ACMD6 argument %u, not 2 (4 bits)",
+		      fixture->fake->rec.acmd6_arg);
+	zassert_equal(fixture->fake->rec.io.bus_width, SDHC_BUS_WIDTH4BIT, "host bus width %d",
+		      fixture->fake->rec.io.bus_width);
+	zassert_equal(fixture->fake->rec.io.timing, SDHC_TIMING_LEGACY, "timing %d",
+		      fixture->fake->rec.io.timing);
+	zassert_equal(fixture->fake->rec.io.clock, SD_CLOCK_25MHZ, "clock %u",
+		      fixture->fake->rec.io.clock);
 }
 
 /** @brief A High Speed card is switched to High Speed and 4 bits, as before. */
-ZTEST(sd_bus_width, test_high_speed_card_gets_4bit)
+ZTEST_F(sd_bus_width, test_high_speed_card_gets_4bit)
 {
-	init_card(true, 0x5U, true);
-	zassert_equal(rec.acmd6_count, 1U, "ACMD6 sent %u times", rec.acmd6_count);
-	zassert_equal(rec.acmd6_arg, 2U);
-	zassert_equal(rec.io.bus_width, SDHC_BUS_WIDTH4BIT);
-	zassert_equal(rec.io.timing, SDHC_TIMING_HS, "timing %d", rec.io.timing);
-	zassert_equal(rec.io.clock, SD_CLOCK_50MHZ, "clock %u", rec.io.clock);
+	init_card(fixture, true, 0x5U, true);
+	zassert_equal(fixture->fake->rec.acmd6_count, 1U, "ACMD6 sent %u times",
+		      fixture->fake->rec.acmd6_count);
+	zassert_equal(fixture->fake->rec.acmd6_arg, 2U);
+	zassert_equal(fixture->fake->rec.io.bus_width, SDHC_BUS_WIDTH4BIT);
+	zassert_equal(fixture->fake->rec.io.timing, SDHC_TIMING_HS, "timing %d",
+		      fixture->fake->rec.io.timing);
+	zassert_equal(fixture->fake->rec.io.clock, SD_CLOCK_50MHZ, "clock %u",
+		      fixture->fake->rec.io.clock);
 }
 
 /** @brief A host without a 4-bit bus keeps the card on 1 bit, and sends no ACMD6. */
-ZTEST(sd_bus_width, test_1bit_host_stays_1bit)
+ZTEST_F(sd_bus_width, test_1bit_host_stays_1bit)
 {
-	init_card(false, 0x5U, false);
-	zassert_equal(rec.acmd6_count, 0U);
-	zassert_equal(rec.io.bus_width, SDHC_BUS_WIDTH1BIT);
+	init_card(fixture, false, 0x5U, false);
+	zassert_equal(fixture->fake->rec.acmd6_count, 0U);
+	zassert_equal(fixture->fake->rec.io.bus_width, SDHC_BUS_WIDTH1BIT);
 }
 
 /** @brief A card whose SCR doesn't list 4 bits (against the spec) stays on 1 bit. */
-ZTEST(sd_bus_width, test_1bit_card_stays_1bit)
+ZTEST_F(sd_bus_width, test_1bit_card_stays_1bit)
 {
-	init_card(false, 0x1U, true);
-	zassert_equal(rec.acmd6_count, 0U);
-	zassert_equal(rec.io.bus_width, SDHC_BUS_WIDTH1BIT);
+	init_card(fixture, false, 0x1U, true);
+	zassert_equal(fixture->fake->rec.acmd6_count, 0U);
+	zassert_equal(fixture->fake->rec.io.bus_width, SDHC_BUS_WIDTH1BIT);
 }
 
-ZTEST_SUITE(sd_bus_width, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(sd_bus_width, NULL, setup, NULL, NULL, NULL);

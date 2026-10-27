@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026 Rob McKay
  * SPDX-License-Identifier: Apache-2.0
  *
  * Unit tests for the hardware abstraction layer: each accessor runs
@@ -19,9 +20,19 @@
 #define NREGS 64
 #define GUARD 0xdeadbeefU
 
+/* The fake register block. The accessors reach it by address (base()), so
+ * it is a static rather than a fixture.
+ */
 static uint32_t regs[NREGS];
 
-/** @brief Fill the fake block with the guard value. @param f Unused. */
+/**
+ * @brief Fill the fake block with the guard value before each test.
+ *
+ * @param f Unused.
+ *
+ * @par Global state
+ * Changes @c regs (every word set to GUARD).
+ */
 static void before(void *f)
 {
 	ARG_UNUSED(f);
@@ -53,7 +64,7 @@ static void expect_only(uint32_t off, uint32_t val)
 			zassert_equal(regs[i], val, "reg 0x%02x = 0x%08x, want 0x%08x", off,
 				      regs[i], val);
 		} else {
-			zassert_equal(regs[i], GUARD, "reg 0x%02x written (0x%08x)", i * 4,
+			zassert_equal(regs[i], GUARD, "reg 0x%02x written (0x%08x)", (i * 4),
 				      regs[i]);
 		}
 	}
@@ -64,6 +75,9 @@ static void expect_only(uint32_t off, uint32_t val)
  *
  * @param off Register offset.
  * @param val Value.
+ *
+ * @par Global state
+ * Changes @c regs.
  */
 static void set_reg(uint32_t off, uint32_t val)
 {

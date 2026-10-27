@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026 Rob McKay
  * SPDX-License-Identifier: Apache-2.0
  *
  * Run an rpi_3a_plus build on QEMU's raspi3ap machine. QEMU's BCM2835 RNG

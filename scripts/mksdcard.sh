@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright (c) 2026 Rob McKay
+# SPDX-License-Identifier: Apache-2.0
 # Assemble the SD card boot files (and a ready-to-flash image) from a build.
 #
 #   scripts/mksdcard.sh <build dir> <output dir>

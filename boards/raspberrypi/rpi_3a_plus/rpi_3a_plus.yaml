@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Rob McKay
+# SPDX-License-Identifier: Apache-2.0
 identifier: rpi_3a_plus
 name: Raspberry Pi 3 Model A+
 type: mcu

@@ -37,8 +37,9 @@ results and fixes that can be offered to the PR.
 - **Zephyr's own suites** on the same Pi and card: `sdhc` 5/5,
   `disk_access` 3/3.
 - **Upstream:** the SD stack's range-check fix is Zephyr PR
-  [#123216](https://github.com/zephyrproject-rtos/zephyr/pull/123216), open
-  and awaiting review; the rest isn't posted yet
+  [#123216](https://github.com/zephyrproject-rtos/zephyr/pull/123216)
+  (`sd: check read and write ranges for overflow`), open and awaiting
+  review; the rest isn't posted yet
   ([UPSTREAM.md](docs/UPSTREAM.md)).
 
 ## Layout
@@ -55,6 +56,7 @@ results and fixes that can be offered to the PR.
 | `boards/raspberrypi/rpi_3a_plus` | The Pi 3A+ board, with the SDHost node |
 | `zephyr/patches.yml`, `zephyr/patches/` | PR #110196 and the fixes (the driver, the firmware mailbox, and the SD stack's range check and bus width), applied by `west patch apply` |
 | `qemu/`, `scripts/run-qemu.sh` | Running the tests on QEMU's `raspi3ap` |
+| `scripts/check-*.py`, `cmake/strict.cmake` | The coding rules' checks ([CODING.md](docs/CODING.md), [CLAUDE.md](CLAUDE.md)): headers, docs, function size, global state and macro arguments, and the strict build |
 | `docs/` | [TESTING.md](docs/TESTING.md), [UPSTREAM.md](docs/UPSTREAM.md), [CODING.md](docs/CODING.md), the [review](docs/reviews/pr110196-sdhost-review.md) and hardware logs |
 
 ## Quick start
@@ -64,7 +66,7 @@ applied, the toolchain and QEMU:
 
 ```sh
 make image              # once, and after any change to the patches
-make test               # no hardware: model tests, HAL tests, doc check
+make test               # no hardware: model tests, HAL tests, code checks
 make sd-test            # Zephyr's SD tests on the emulated Pi 3A+
 make sd-qual-test       # out/sd-qual-test/sdcard.img for a real Pi 3A+
 make sd-hw-test         # out/sd-hw-test/sdcard.img: the review's findings

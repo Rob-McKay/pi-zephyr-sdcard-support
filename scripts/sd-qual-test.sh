@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright (c) 2026 Rob McKay
+# SPDX-License-Identifier: Apache-2.0
 # SD card qualification (tests/sdcard_hw) for a real Raspberry Pi 3A+: the
 # SDHost driver from Zephyr PR #110196 through Zephyr's disk access API.
 # Runs inside the Docker image. See docs/TESTING.md.
@@ -29,8 +31,14 @@ conf=(-DCONFIG_SDCARD_HW_SOAK_SECONDS="${SD_QUAL_SOAK_SECONDS:-600}"
 	-DCONFIG_SDCARD_HW_SCRATCH_MB="${SD_QUAL_SCRATCH_MB:-64}"
 	-DCONFIG_SDCARD_HW_SEED="${SD_QUAL_SEED:-0}")
 
-# Put zephyr.crc, zephyr.bin's CRC-32 as the host computes it, on the boot
-# partition (at 1 MB, scripts/mksdcard.sh), for suite 2 to compare with.
+## @brief Put zephyr.crc, zephyr.bin's CRC-32 as the host computes it, on
+#         the boot partition (at 1 MB, scripts/mksdcard.sh), for suite 2 to
+#         compare with.
+#
+# Also writes it to $out/zephyr.crc.
+#
+# @param $1 zephyr.bin.
+# @param $2 The SD card image.
 add_crc() {
 	local bin=$1 img=$2
 	python3 -I -c 'import sys, zlib; print("%08x" % zlib.crc32(open(sys.argv[1], "rb").read()))' \

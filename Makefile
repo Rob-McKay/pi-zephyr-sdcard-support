@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Rob McKay
+# SPDX-License-Identifier: Apache-2.0
 # Host-side convenience wrapper: everything runs in the Docker image.
 #
 #   make image                 build the Docker image for this machine

@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Rob McKay
 # SPDX-License-Identifier: Apache-2.0
 #
 # Choose the compiler: clang everywhere. Include before find_package(Zephyr).

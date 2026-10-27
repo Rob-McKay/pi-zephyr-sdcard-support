@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright (c) 2026 Rob McKay
+# SPDX-License-Identifier: Apache-2.0
 # The tests that need no hardware, on native_sim (64-bit host builds). Runs
 # inside the Docker image.
 #
@@ -19,15 +21,24 @@
 # unless the tests execute every line of it. Every build is strict (no
 # warnings, clean clang-tidy: cmake/strict.cmake).
 #
-# First, scripts/check-docs.py checks that every function has a Doxygen
-# comment, and a search checks that only the HAL touches registers.
+# First, scripts/check-headers.py checks that every source file carries
+# the copyright and licence lines, scripts/check-docs.py that every
+# function has a Doxygen comment documenting its parameters and return
+# value, scripts/check-size.py that no function is over 50 lines or
+# complexity 15, scripts/check-globals.py that Python functions document
+# the global state they change (the builds check the C, and that macro
+# arguments are parenthesised), and a search that only the HAL touches
+# registers.
 #
 # The hardware tests are built by the sd-*.sh scripts.
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")/.." && pwd)
 
+"$here/scripts/check-headers.py"
 "$here/scripts/check-docs.py"
+"$here/scripts/check-size.py"
+"$here/scripts/check-globals.py" --python
 
 # Only the hardware abstraction layer (hal/) touches registers.
 if grep -rnE '\bsys_(read|write)(8|16|32|64)\(' "$here/tests/sdhost_hw/src" \

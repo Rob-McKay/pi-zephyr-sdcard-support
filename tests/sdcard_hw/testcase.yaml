@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Rob McKay
+# SPDX-License-Identifier: Apache-2.0
 tests:
   sdcard_hw.qualification:
     platform_allow: rpi_3a_plus

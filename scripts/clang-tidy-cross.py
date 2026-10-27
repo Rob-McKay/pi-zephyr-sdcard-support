@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2026 Rob McKay
+# SPDX-License-Identifier: Apache-2.0
 """Run clang-tidy on a source file using the build's compile command.
 
 CMake's <LANG>_CLANG_TIDY hook (see cmake/strict.cmake) runs this before
@@ -15,10 +17,14 @@ library's headers in its per-target runtimes, and the native_sim tests
 with the host's clang. clang-tidy's own clang knows neither ATfE's
 runtimes nor its configuration files, so for a cross compile this wrapper
 adds the C library's include directories as the real compiler finds them,
-then runs clang-tidy and returns its exit status. Findings are reported in
+then runs clang-tidy and, if it passes, scripts/check-globals.py's
+check that each function documents the global state it changes and
+scripts/check-macro-args.py's check that each expression passed to a
+macro is parenthesised, and returns the result. Findings are reported in
 this repository's headers as well as its sources.
 """
 
+import importlib.util
 import os
 import re
 import shutil
@@ -72,6 +78,39 @@ def clang_command(cmd):
     return out
 
 
+## @brief Run one of the repository's per-source checks on the source being
+#         compiled.
+#
+# @param script The check's script, in scripts/: its check_source(source,
+#        args, seen) returns its problems, given libclang_args(compile_cmd,
+#        source).
+# @param section The section of docs/CODING.md giving its rule.
+# @param source The source.
+# @param compile_cmd Its compile command: compiler first.
+# @return 0 if the source passes, else 1.
+def run_check(script, section, source, compile_cmd):
+    here = os.path.dirname(os.path.realpath(__file__))
+    spec = importlib.util.spec_from_file_location(script.replace("-", "_")[:-3],
+                                                  os.path.join(here, script))
+    check = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(check)
+    problems = check.check_source(source, check.libclang_args(compile_cmd, source), set())
+    for p in problems:
+        print(f"{p} (docs/CODING.md, section {section})", file=sys.stderr)
+    return 1 if problems else 0
+
+
+## @brief Run the checks clang-tidy can't make on the source being compiled.
+#
+# @param source The source.
+# @param compile_cmd Its compile command: compiler first.
+# @return 0 if every function documents the global state it changes and
+#         every expression macro argument is parenthesised, else 1.
+def check_more(source, compile_cmd):
+    return (run_check("check-globals.py", 1, source, compile_cmd) |
+            run_check("check-macro-args.py", 0, source, compile_cmd))
+
+
 ## @brief Entry point.
 #
 # @return clang-tidy's exit status.
@@ -90,7 +129,8 @@ def main():
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     header_filter = f"--header-filter=^{re.escape(root)}/(hal|tests)/"
     cmd = [tidy, header_filter] + argv[:sep] + ["--"] + clang_command(argv[sep + 1:])
-    return subprocess.run(cmd).returncode
+    status = subprocess.run(cmd).returncode
+    return status or check_more(argv[sep - 1], argv[sep + 1:])
 
 
 if __name__ == "__main__":

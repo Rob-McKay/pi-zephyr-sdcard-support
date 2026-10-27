@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Rob McKay
+# SPDX-License-Identifier: Apache-2.0
 # clang-tidy configuration for this repository's own code, run on every
 # compile by the build (cmake/strict.cmake, scripts/clang-tidy-cross.py).
 # Any finding fails the build. docs/CODING.md explains the choices.

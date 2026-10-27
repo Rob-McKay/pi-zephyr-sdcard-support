@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Rob McKay
 # SPDX-License-Identifier: Apache-2.0
 #
 # Zephyr's SD stack bus width choice (subsys/sd/sdmmc.c), against a fake

@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Rob McKay
 # SPDX-License-Identifier: Apache-2.0
 #
 # Unit tests for the hardware abstraction layer (hal/include/hal): each

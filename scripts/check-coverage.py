@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2026 Rob McKay
+# SPDX-License-Identifier: Apache-2.0
 """Check that a test run executed every line of the code it covers.
 
 Reads, through `llvm-cov gcov`, the gcov-format data that a native_sim test

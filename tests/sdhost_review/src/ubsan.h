@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026 Rob McKay
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -7,9 +8,19 @@
 
 #include <stdint.h>
 
-/* Signed overflows detected in sdhc_bcm2835_sdhost.c, and the last line. */
+/* Signed overflows detected in sdhc_bcm2835_sdhost.c, and the last line.
+ * Only the handlers below and ubsan_reset() change them.
+ */
 extern int ubsan_driver_overflows;
 extern uint32_t ubsan_last_line;
+
+/**
+ * @brief Forget the overflows recorded so far.
+ *
+ * @par Global state
+ * Changes @c ubsan_driver_overflows and @c ubsan_last_line.
+ */
+void ubsan_reset(void);
 
 /**
  * @brief Sanitizer handler for a signed addition overflow: record it.

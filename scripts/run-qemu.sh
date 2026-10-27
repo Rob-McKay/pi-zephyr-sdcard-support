@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright (c) 2026 Rob McKay
+# SPDX-License-Identifier: Apache-2.0
 # Run a Raspberry Pi 3A+ build on QEMU's emulated Pi 3A+ (raspi3ap).
 #
 #   scripts/run-qemu.sh <build dir> [extra QEMU arguments...]

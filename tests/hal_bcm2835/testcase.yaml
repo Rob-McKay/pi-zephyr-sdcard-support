@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Rob McKay
+# SPDX-License-Identifier: Apache-2.0
 tests:
   sdcard.hal_bcm2835:
     platform_allow: native_sim/native/64

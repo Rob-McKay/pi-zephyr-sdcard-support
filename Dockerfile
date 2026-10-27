@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Rob McKay
+# SPDX-License-Identifier: Apache-2.0
 # Build environment for the BCM283x SD card tests (Raspberry Pi 3 Model A+).
 #
 # Contains Arm Toolchain for Embedded (the Pi firmware's compiler), the
@@ -51,10 +53,14 @@ ENV PIP_CERT=/etc/ssl/certs/ca-certificates.crt \
 
 # Python tooling in a venv (Ubuntu 24.04 forbids system-wide pip installs).
 # clang-tidy comes from PyPI: the build needs 20 or later (.clang-tidy's
-# banned-function list), and Ubuntu 24.04 ships 18.
+# banned-function list), and Ubuntu 24.04 ships 18. lizard measures
+# function size (scripts/check-size.py); libclang, matching the host
+# clang 18 whose built-in headers it uses, reads the code for
+# scripts/check-globals.py and scripts/check-macro-args.py.
 ENV VIRTUAL_ENV=/opt/venv \
     PATH=/opt/venv/bin:$PATH
-RUN python3 -m venv $VIRTUAL_ENV && pip install --no-cache-dir west clang-tidy==23.1.3
+RUN python3 -m venv $VIRTUAL_ENV && pip install --no-cache-dir west clang-tidy==23.1.3 lizard==1.24.3 \
+    libclang==18.1.1
 
 # Zephyr SDK for this host architecture: its host tools (QEMU) only, no
 # toolchains.

@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026 Rob McKay
  * SPDX-License-Identifier: Apache-2.0
  *
  * Hardware abstraction for the BCM2835/BCM2837 GPIO block (BCM2835 ARM
@@ -59,7 +60,7 @@ static inline void hal_gpio_pull_select(mm_reg_t base, uint32_t pull)
  */
 static inline void hal_gpio_pull_clock(mm_reg_t base, unsigned int pin)
 {
-	sys_write32(BIT(pin % 32), base + BCM2835_GPIO_GPPUDCLK0 + ((mm_reg_t)(pin / 32) * 4));
+	sys_write32(BIT((pin % 32)), base + BCM2835_GPIO_GPPUDCLK0 + ((mm_reg_t)(pin / 32) * 4));
 }
 
 /**
@@ -82,8 +83,8 @@ static inline void hal_gpio_pull_clock_end(mm_reg_t base, unsigned int pin)
  */
 static inline bool hal_gpio_level(mm_reg_t base, unsigned int pin)
 {
-	return (sys_read32(base + BCM2835_GPIO_GPLEV0 + ((mm_reg_t)(pin / 32) * 4)) & BIT(pin % 32)) !=
-	       0;
+	return (sys_read32(base + BCM2835_GPIO_GPLEV0 + ((mm_reg_t)(pin / 32) * 4)) &
+		BIT((pin % 32))) != 0;
 }
 
 #endif /* HAL_BCM2835_GPIO_H_ */

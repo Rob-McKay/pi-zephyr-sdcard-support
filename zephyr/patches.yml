@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Rob McKay
+# SPDX-License-Identifier: Apache-2.0
 # Patches to Zephyr, applied with "west patch apply" after "west update"
 # (the Dockerfile does both). Each one waits for an upstream pull request;
 # drop it once the west.yml pin includes the merged change. See

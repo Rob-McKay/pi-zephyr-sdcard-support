@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026 Rob McKay
  * SPDX-License-Identifier: Apache-2.0
  *
  * Tests reproducing the findings of docs/reviews/pr110196-sdhost-review.md
@@ -64,6 +65,10 @@ static void fake_write32(uint32_t val, uintptr_t addr);
  */
 #define SPEC_WRITE_BUSY_MS 500
 
+/* The model. Only the driver's register hooks (fake_read32() and
+ * fake_write32()) use it directly; the rest is given it, and the tests reach
+ * it through their fixture.
+ */
 static struct fake_hw {
 	uint32_t regs[0x60 / 4];
 	uint32_t core_hz;          /* the real VPU core clock */
@@ -142,15 +147,16 @@ static uint32_t pattern(uint32_t lba, uint32_t i)
 /**
  * @brief Count the queued card-to-host words that have arrived by now.
  *
+ * @param[in,out] m The controller and card model.
  * @return Number of words at the head of the queue whose time has come.
  */
-static int q_count_avail(void)
+static int q_count_avail(struct fake_hw *m)
 {
 	int n = 0;
 	int64_t now = now_us();
 
-	for (int i = hw.qh; i != hw.qt; i = (i + 1) % QUEUE_LEN) {
-		if (hw.q_avail[i] > now) {
+	for (int i = m->qh; i != m->qt; i = (i + 1) % QUEUE_LEN) {
+		if (m->q_avail[i] > now) {
 			break;
 		}
 		n++;
@@ -161,67 +167,78 @@ static int q_count_avail(void)
 /**
  * @brief Queue one card-to-host word.
  *
+ * @param[in,out] m The controller and card model.
  * @param w The word.
  * @param at Time (us) from which the host can read it.
  */
-static void q_push(uint32_t w, int64_t at)
+static void q_push(struct fake_hw *m, uint32_t w, int64_t at)
 {
-	hw.q[hw.qt] = w;
-	hw.q_avail[hw.qt] = at;
-	hw.qt = (hw.qt + 1) % QUEUE_LEN;
+	m->q[m->qt] = w;
+	m->q_avail[m->qt] = at;
+	m->qt = (m->qt + 1) % QUEUE_LEN;
 }
 
-/** @brief Put the controller and card model back to its power-on state. */
-static void fake_reset(void)
+/**
+ * @brief Put the controller and card model back to its power-on state.
+ *
+ * @param[out] m The controller and card model.
+ */
+static void fake_reset(struct fake_hw *m)
 {
-	hw = (struct fake_hw){0};
-	hw.core_hz = 250000000;
-	hw.fill_override = -1;
+	*m = (struct fake_hw){0};
+	m->core_hz = 250000000;
+	m->fill_override = -1;
 }
 
 /**
  * @brief Compute the SD bus clock the model's divider produces.
  *
+ * @param[in,out] m The controller and card model.
  * @return Bus clock in Hz: the real core clock over SDCDIV + 2.
  */
-static uint32_t bus_hz(void)
+static uint32_t bus_hz(struct fake_hw *m)
 {
-	return hw.core_hz / (hw.regs[SDCDIV / 4] + 2);
+	return m->core_hz / (m->regs[SDCDIV / 4] + 2);
 }
 
 /**
  * @brief Inject a CRC error: the controller abandons the data phase.
+ *
+ * @param[in,out] m The controller and card model.
  */
-static void data_crc_error(void)
+static void data_crc_error(struct fake_hw *m)
 {
-	hw.regs[SDHSTS / 4] |= SDHSTS_CRC16_ERROR;
-	hw.data_active = false;
-	hw.qh = hw.qt;
+	m->regs[SDHSTS / 4] |= SDHSTS_CRC16_ERROR;
+	m->data_active = false;
+	m->qh = m->qt;
 }
 
 /**
  * @brief The card starts the next block of an open-ended read: one word a
  *        microsecond, into the FIFO.
+ *
+ * @param[in,out] m The controller and card model.
  */
-static void run_on_next_block(void)
+static void run_on_next_block(struct fake_hw *m)
 {
 	int64_t at = now_us();
 
 	for (uint32_t i = 0; i < WORDS(BLOCK); i++) {
-		q_push(pattern(hw.data_arg, hw.data_moved + i), at + i);
+		q_push(m, pattern(m->data_arg, m->data_moved + i), at + i);
 	}
-	hw.data_left = WORDS(BLOCK);
-	hw.overrun = true;
+	m->data_left = WORDS(BLOCK);
+	m->overrun = true;
 }
 
 /**
  * @brief Compute the controller's data timeout (SDTOUT) in microseconds.
  *
+ * @param[in,out] m The controller and card model.
  * @return SDTOUT cycles at the current bus clock.
  */
-static int64_t sdtout_us(void)
+static int64_t sdtout_us(struct fake_hw *m)
 {
-	return ((int64_t)hw.regs[SDTOUT / 4] * 1000000) / bus_hz();
+	return ((int64_t)m->regs[SDTOUT / 4] * 1000000) / bus_hz(m);
 }
 
 /**
@@ -229,26 +246,28 @@ static int64_t sdtout_us(void)
  *
  * Injects the CRC error set by err_after, and starts the card's write
  * busy once the last word of a write has gone.
+ *
+ * @param[in,out] m The controller and card model.
  */
-static void data_moved_one(void)
+static void data_moved_one(struct fake_hw *m)
 {
-	hw.data_moved++;
-	if (hw.data_left > 0) {
-		hw.data_left--;
+	m->data_moved++;
+	if (m->data_left > 0) {
+		m->data_left--;
 	}
-	if (hw.err_after != 0 && hw.data_moved == hw.err_after) {
-		data_crc_error();
+	if (m->err_after != 0 && m->data_moved == m->err_after) {
+		data_crc_error(m);
 		return;
 	}
-	if (hw.data_read && hw.data_left == 0 && hw.tail_us != 0) {
-		hw.tail_until = now_us() + hw.tail_us;
+	if (m->data_read && m->data_left == 0 && m->tail_us != 0) {
+		m->tail_until = now_us() + m->tail_us;
 	}
-	if (hw.data_read && hw.data_left == 0 && hw.card_in_data && hw.run_on) {
-		run_on_next_block();
+	if (m->data_read && m->data_left == 0 && m->card_in_data && m->run_on) {
+		run_on_next_block(m);
 		return;
 	}
-	if (hw.data_left == 0 && !hw.data_read) {
-		hw.write_busy_until = now_us() + 50;
+	if (m->data_left == 0 && !m->data_read) {
+		m->write_busy_until = now_us() + 50;
 	}
 }
 
@@ -257,36 +276,37 @@ static void data_moved_one(void)
  *
  * Ends a write's data phase once its busy period is over.
  *
+ * @param[in,out] m The controller and card model.
  * @return SDEDM_FSM_* value.
  */
-static uint32_t edm_fsm(void)
+static uint32_t edm_fsm(struct fake_hw *m)
 {
 	uint32_t fsm = SDEDM_FSM_DATAMODE;
 
-	if (hw.stopped_mid_block && now_us() >= hw.abort_at) {
+	if (m->stopped_mid_block && now_us() >= m->abort_at) {
 		/* The rest of the block never came: the data timeout ends it. */
-		hw.regs[SDHSTS / 4] |= SDHSTS_REW_TIME_OUT;
-		hw.data_active = false;
-		hw.stopped_mid_block = false;
-		hw.overrun = false;
+		m->regs[SDHSTS / 4] |= SDHSTS_REW_TIME_OUT;
+		m->data_active = false;
+		m->stopped_mid_block = false;
+		m->overrun = false;
 	}
-	if (hw.tail_until != 0 && now_us() >= hw.tail_until) {
+	if (m->tail_until != 0 && now_us() >= m->tail_until) {
 		/* The last block's CRC has arrived. */
-		hw.tail_until = 0;
-		if (hw.crc_err_last) {
-			hw.regs[SDHSTS / 4] |= SDHSTS_CRC16_ERROR;
+		m->tail_until = 0;
+		if (m->crc_err_last) {
+			m->regs[SDHSTS / 4] |= SDHSTS_CRC16_ERROR;
 		}
 	}
-	if (hw.data_active) {
-		if (hw.data_read) {
-			fsm = hw.data_left > 0 || hw.tail_until != 0 ? SDEDM_FSM_READDATA
-								    : SDEDM_FSM_READWAIT;
-		} else if (hw.data_left > 0) {
+	if (m->data_active) {
+		if (m->data_read) {
+			fsm = m->data_left > 0 || m->tail_until != 0 ? SDEDM_FSM_READDATA
+								     : SDEDM_FSM_READWAIT;
+		} else if (m->data_left > 0) {
 			fsm = SDEDM_FSM_WRITEDATA;
-		} else if (now_us() < hw.write_busy_until) {
+		} else if (now_us() < m->write_busy_until) {
 			fsm = SDEDM_FSM_WRITEWAIT1;
 		} else {
-			hw.data_active = false;
+			m->data_active = false;
 		}
 	}
 	return fsm;
@@ -295,17 +315,18 @@ static uint32_t edm_fsm(void)
 /**
  * @brief Give the SDEDM FIFO fill level, or the injected one.
  *
+ * @param[in,out] m The controller and card model.
  * @return Words in the FIFO, as SDEDM reports them.
  */
-static uint32_t edm_fill(void)
+static uint32_t edm_fill(struct fake_hw *m)
 {
 	uint32_t fill = 0;
 
-	if (hw.data_read || !hw.data_active) {
-		fill = MIN(q_count_avail(), SDDATA_FIFO_WORDS);
+	if (m->data_read || !m->data_active) {
+		fill = MIN(q_count_avail(m), SDDATA_FIFO_WORDS);
 	}
-	if (hw.fill_override >= 0) {
-		fill = hw.fill_override;
+	if (m->fill_override >= 0) {
+		fill = m->fill_override;
 	}
 	return fill;
 }
@@ -313,14 +334,16 @@ static uint32_t edm_fill(void)
 /**
  * @brief Read SDEDM: the written thresholds plus the live FSM and fill level.
  *
+ * @param[in,out] m The controller and card model.
  * @return Register value.
  */
-static uint32_t edm_value(void)
+static uint32_t edm_value(struct fake_hw *m)
 {
-	uint32_t fsm = edm_fsm();
-	uint32_t fill = edm_fill();
+	uint32_t fsm = edm_fsm(m);
+	uint32_t fill = edm_fill(m);
 
-	return (hw.regs[SDEDM / 4] & ~(uint32_t)(SDEDM_FSM_MASK | (0x1fU << 4))) | fsm | (fill << 4);
+	return (m->regs[SDEDM / 4] & ~(uint32_t)(SDEDM_FSM_MASK | (0x1fU << 4))) | fsm |
+	       (fill << 4);
 }
 
 /**
@@ -328,39 +351,41 @@ static uint32_t edm_value(void)
  *
  * On completion NEW_FLAG clears, and a busy-wait command raises BUSY_IRPT.
  *
+ * @param[in,out] m The controller and card model.
  * @return Register value.
  */
-static uint32_t sdcmd_read(void)
+static uint32_t sdcmd_read(struct fake_hw *m)
 {
 	/* With the FIFO full during a read the controller stops the bus
 	 * clock, so no command completes (on the Pi: "NEW_FLAG never
 	 * cleared" after a run-on read).
 	 */
-	bool clock_stopped = hw.overrun && hw.data_active && q_count_avail() >= SDDATA_FIFO_WORDS;
+	bool clock_stopped = m->overrun && m->data_active && q_count_avail(m) >= SDDATA_FIFO_WORDS;
 
-	if (hw.cmd_active && !clock_stopped && now_us() >= hw.cmd_done_at) {
-		hw.cmd_active = false;
-		if (hw.regs[SDCMD / 4] & SDCMD_BUSYWAIT) {
-			hw.regs[SDHSTS / 4] |= SDHSTS_BUSY_IRPT;
+	if (m->cmd_active && !clock_stopped && now_us() >= m->cmd_done_at) {
+		m->cmd_active = false;
+		if (m->regs[SDCMD / 4] & SDCMD_BUSYWAIT) {
+			m->regs[SDHSTS / 4] |= SDHSTS_BUSY_IRPT;
 		}
-		hw.regs[SDCMD / 4] &= ~(uint32_t)SDCMD_NEW_FLAG;
+		m->regs[SDCMD / 4] &= ~(uint32_t)SDCMD_NEW_FLAG;
 	}
-	return hw.regs[SDCMD / 4];
+	return m->regs[SDCMD / 4];
 }
 
 /**
  * @brief Read SDDATA: pop the oldest arrived word from the FIFO.
  *
+ * @param[in,out] m The controller and card model.
  * @return The word, or 0xdeadbeef if the FIFO is empty.
  */
-static uint32_t sddata_read(void)
+static uint32_t sddata_read(struct fake_hw *m)
 {
-	if (hw.qh != hw.qt && q_count_avail() > 0) {
-		uint32_t w = hw.q[hw.qh];
+	if (m->qh != m->qt && q_count_avail(m) > 0) {
+		uint32_t w = m->q[m->qh];
 
-		hw.qh = (hw.qh + 1) % QUEUE_LEN;
-		if (hw.data_active && hw.data_read) {
-			data_moved_one();
+		m->qh = (m->qh + 1) % QUEUE_LEN;
+		if (m->data_active && m->data_read) {
+			data_moved_one(m);
 		}
 		return w;
 	}
@@ -370,25 +395,29 @@ static uint32_t sddata_read(void)
 /**
  * @brief The driver's sys_read32(): read a model register.
  *
- * Each access takes 1 us of simulated time.
+ * Each access takes 1 us of simulated time. The driver reaches the model
+ * only through this and fake_write32(), so they use it directly.
  *
  * @param addr Register address.
  * @return Register value.
+ *
+ * @par Global state
+ * Changes @c hw (the model: a read can complete a command or move FIFO data).
  */
 static uint32_t fake_read32(uintptr_t addr)
 {
 	uint32_t off = addr - FAKE_BASE;
 
-	zassert_true(addr >= FAKE_BASE && off < sizeof(hw.regs), "bad read 0x%lx", addr);
+	zassert_true((addr >= FAKE_BASE && off < sizeof(hw.regs)), "bad read 0x%lx", addr);
 	k_busy_wait(1); /* register access time; lets simulated time run */
 
 	switch (off) {
 	case SDCMD:
-		return sdcmd_read();
+		return sdcmd_read(&hw);
 	case SDEDM:
-		return edm_value();
+		return edm_value(&hw);
 	case SDDATA:
-		return sddata_read();
+		return sddata_read(&hw);
 	default:
 		return hw.regs[off / 4];
 	}
@@ -397,69 +426,73 @@ static uint32_t fake_read32(uintptr_t addr)
 /**
  * @brief Write SDDATA: log the word and count it against a write.
  *
+ * @param[in,out] m The controller and card model.
  * @param val The word.
  */
-static void sddata_write(uint32_t val)
+static void sddata_write(struct fake_hw *m, uint32_t val)
 {
-	if (hw.fill_override >= SDDATA_FIFO_WORDS) {
-		hw.overruns++;
+	if (m->fill_override >= SDDATA_FIFO_WORDS) {
+		m->overruns++;
 	}
-	if (hw.nwritten < QUEUE_LEN) {
-		hw.written[hw.nwritten++] = val;
+	if (m->nwritten < QUEUE_LEN) {
+		m->written[m->nwritten++] = val;
 	}
-	if (hw.data_active && !hw.data_read) {
-		data_moved_one();
+	if (m->data_active && !m->data_read) {
+		data_moved_one(m);
 	}
 }
 
 /**
  * @brief Write SDEDM: thresholds and FORCE_DATA_MODE; FSM bits are read-only.
  *
+ * @param[in,out] m The controller and card model.
  * @param val Value written.
  */
-static void sdedm_write(uint32_t val)
+static void sdedm_write(struct fake_hw *m, uint32_t val)
 {
-	hw.regs[SDEDM / 4] = val & ~(uint32_t)(SDEDM_FSM_MASK | (0x1fU << 4));
-	if ((val & SDEDM_FORCE_DATA_MODE) && hw.data_left == 0) {
-		hw.data_active = false;
+	m->regs[SDEDM / 4] = val & ~(uint32_t)(SDEDM_FSM_MASK | (0x1fU << 4));
+	if ((val & SDEDM_FORCE_DATA_MODE) && m->data_left == 0) {
+		m->data_active = false;
 	}
 }
 
 /**
  * @brief Log a new command, counting it as a violation if one is in progress.
  *
+ * @param[in,out] m The controller and card model.
  * @param op Command opcode.
  * @param now Time of issue (us).
  */
-static void cmd_log(uint32_t op, int64_t now)
+static void cmd_log(struct fake_hw *m, uint32_t op, int64_t now)
 {
-	bool stopping_read = op == SD_STOP_TRANSMISSION && hw.data_read;
+	bool stopping_read = op == SD_STOP_TRANSMISSION && m->data_read;
 
-	if ((hw.cmd_active && now < hw.cmd_done_at) ||
-	    (hw.data_active && hw.data_left > 0 && !stopping_read)) {
-		hw.violations++;
+	if ((m->cmd_active && now < m->cmd_done_at) ||
+	    (m->data_active && m->data_left > 0 && !stopping_read)) {
+		m->violations++;
 	}
-	if (hw.nlog < (int)sizeof(hw.log)) {
-		hw.log[hw.nlog++] = op;
+	if (m->nlog < (int)sizeof(m->log)) {
+		m->log[m->nlog++] = op;
 	}
 }
 
 /**
  * @brief Schedule a new command's completion and set its R1 response.
  *
+ * @param[in,out] m The controller and card model.
  * @param val SDCMD value written.
  * @param op Command opcode.
  * @param now Time of issue (us).
  */
-static void cmd_schedule(uint32_t val, uint32_t op, int64_t now)
+static void cmd_schedule(struct fake_hw *m, uint32_t val, uint32_t op, int64_t now)
 {
-	hw.cmd_active = true;
-	hw.cmd_done_at = now + 20 + hw.resp_delay_us + hw.resp_delay_once_us;
-	hw.resp_delay_once_us = 0;
+	m->cmd_active = true;
+	m->cmd_done_at = now + 20 + m->resp_delay_us + m->resp_delay_once_us;
+	m->resp_delay_once_us = 0;
 	if (val & SDCMD_BUSYWAIT) {
-		hw.cmd_done_at += op == SD_STOP_TRANSMISSION ? hw.busy_stop_us : hw.busy_r1b_us;
+		m->cmd_done_at += op == SD_STOP_TRANSMISSION ? m->busy_stop_us : m->busy_r1b_us;
 	}
-	hw.regs[SDRSP0 / 4] = 0x900; /* R1: ready, transfer state */
+	m->regs[SDRSP0 / 4] = 0x900; /* R1: ready, transfer state */
 }
 
 /**
@@ -467,27 +500,28 @@ static void cmd_schedule(uint32_t val, uint32_t op, int64_t now)
  *
  * The read data arrives data_delay_us after the command completes.
  *
+ * @param[in,out] m The controller and card model.
  * @param val SDCMD value written.
  * @param op Command opcode.
  * @param arg Command argument (the block number).
  */
-static void data_start(uint32_t val, uint32_t op, uint32_t arg)
+static void data_start(struct fake_hw *m, uint32_t val, uint32_t op, uint32_t arg)
 {
-	uint32_t words = WORDS(hw.regs[SDHBCT / 4]) * hw.regs[SDHBLC / 4];
+	uint32_t words = WORDS(m->regs[SDHBCT / 4]) * m->regs[SDHBLC / 4];
 
-	hw.data_active = true;
-	hw.data_read = (val & SDCMD_READ_CMD) != 0;
-	hw.data_left = words;
-	hw.data_moved = 0;
-	hw.data_arg = arg;
+	m->data_active = true;
+	m->data_read = (val & SDCMD_READ_CMD) != 0;
+	m->data_left = words;
+	m->data_moved = 0;
+	m->data_arg = arg;
 	if (op == SD_READ_MULTIPLE_BLOCK || op == SD_WRITE_MULTIPLE_BLOCK) {
-		hw.card_in_data = true;
+		m->card_in_data = true;
 	}
-	if (hw.data_read) {
-		int64_t at = hw.cmd_done_at + hw.data_delay_us;
+	if (m->data_read) {
+		int64_t at = m->cmd_done_at + m->data_delay_us;
 
 		for (uint32_t i = 0; i < words; i++) {
-			q_push(pattern(arg, i), at);
+			q_push(m, pattern(arg, i), at);
 		}
 	}
 }
@@ -497,41 +531,43 @@ static void data_start(uint32_t val, uint32_t op, uint32_t arg)
  *        reached the FIFO stays; the controller waits for the rest until
  *        its data timeout.
  *
+ * @param[in,out] m The controller and card model.
  * @param now Time of the CMD12 (us).
  */
-static void card_stops_mid_block(int64_t now)
+static void card_stops_mid_block(struct fake_hw *m, int64_t now)
 {
-	int keep = MIN(q_count_avail(), SDDATA_FIFO_WORDS);
+	int keep = MIN(q_count_avail(m), SDDATA_FIFO_WORDS);
 
-	hw.qt = (hw.qh + keep) % QUEUE_LEN;
-	hw.stopped_mid_block = true;
-	hw.abort_at = now + sdtout_us();
+	m->qt = (m->qh + keep) % QUEUE_LEN;
+	m->stopped_mid_block = true;
+	m->abort_at = now + sdtout_us(m);
 }
 
 /**
  * @brief Write SDCMD; with NEW_FLAG set, the card model runs the command.
  *
+ * @param[in,out] m The controller and card model.
  * @param val Value written.
  * @param now Time of the write (us).
  */
-static void sdcmd_write(uint32_t val, int64_t now)
+static void sdcmd_write(struct fake_hw *m, uint32_t val, int64_t now)
 {
 	uint32_t op = val & SDCMD_CMD_MASK;
 
-	hw.regs[SDCMD / 4] = val;
+	m->regs[SDCMD / 4] = val;
 	if (!(val & SDCMD_NEW_FLAG)) {
 		return;
 	}
-	cmd_log(op, now);
-	cmd_schedule(val, op, now);
+	cmd_log(m, op, now);
+	cmd_schedule(m, val, op, now);
 	if (op == SD_STOP_TRANSMISSION) {
-		hw.card_in_data = false;
-		if (hw.overrun && hw.data_active && hw.data_left > 0) {
-			card_stops_mid_block(now);
+		m->card_in_data = false;
+		if (m->overrun && m->data_active && m->data_left > 0) {
+			card_stops_mid_block(m, now);
 		}
 	}
 	if (val & (uint32_t)(SDCMD_READ_CMD | SDCMD_WRITE_CMD)) {
-		data_start(val, op, hw.regs[SDARG / 4]);
+		data_start(m, val, op, m->regs[SDARG / 4]);
 	}
 }
 
@@ -542,13 +578,16 @@ static void sdcmd_write(uint32_t val, int64_t now)
  *
  * @param val Value written.
  * @param addr Register address.
+ *
+ * @par Global state
+ * Changes @c hw (the model).
  */
 static void fake_write32(uint32_t val, uintptr_t addr)
 {
 	uint32_t off = addr - FAKE_BASE;
 	int64_t now;
 
-	zassert_true(addr >= FAKE_BASE && off < sizeof(hw.regs), "bad write 0x%lx", addr);
+	zassert_true((addr >= FAKE_BASE && off < sizeof(hw.regs)), "bad write 0x%lx", addr);
 	if (off >= sizeof(hw.regs)) {
 		return; /* the assertion failed: ignore the write */
 	}
@@ -560,13 +599,13 @@ static void fake_write32(uint32_t val, uintptr_t addr)
 		hw.regs[off / 4] &= ~val; /* write 1 to clear */
 		break;
 	case SDDATA:
-		sddata_write(val);
+		sddata_write(&hw, val);
 		break;
 	case SDEDM:
-		sdedm_write(val);
+		sdedm_write(&hw, val);
 		break;
 	case SDCMD:
-		sdcmd_write(val, now);
+		sdcmd_write(&hw, val, now);
 		break;
 	default:
 		hw.regs[off / 4] = val;
@@ -609,28 +648,109 @@ static int set_clock(uint32_t hz)
 	return sdhc_bcm2835_sdhost_set_io(&dut, &io);
 }
 
+/* One block of buffer per reader, and its first block number. */
+struct reader {
+	struct race *race;
+	uint32_t lba0;
+	uint32_t buf[WORDS(BLOCK)];
+};
+
+/* Finding 9's two reader threads. */
+struct race {
+	volatile int errors;
+	struct k_thread threads[2];
+	struct reader readers[2];
+};
+
+/* Finding 6's lower-priority thread. */
+struct low_prio {
+	volatile uint32_t runs;
+	volatile bool stop;
+	struct k_thread thread;
+};
+
+/* The sanity tests' state. */
+struct sdhost_sanity_fixture {
+	struct fake_hw *hw;             /* the model */
+	uint32_t buf[WORDS(BLOCK) * 8]; /* data for and from transfers */
+};
+
+/* The review tests' state. */
+struct sdhost_review_fixture {
+	struct fake_hw *hw;             /* the model */
+	uint32_t buf[WORDS(BLOCK) * 8]; /* data for and from transfers */
+	uint32_t big[2048 / 4];         /* one block over the host's limit */
+	struct low_prio low;
+	struct race race;
+};
+
 /**
- * @brief Suite setup: nothing to share.
+ * @brief Sanity suite setup: point the fixture at the model.
  *
- * @return NULL (no fixture).
+ * @return The fixture.
+ *
+ * @par Global state
+ * Changes @c fixture (its model pointer).
  */
-static void *suite_setup(void)
+static void *sanity_setup(void)
 {
-	return NULL;
+	static struct sdhost_sanity_fixture fixture;
+
+	fixture.hw = &hw;
+	return &fixture;
 }
 
 /**
- * @brief Reset the model and driver, at 25 MHz, before each test.
+ * @brief Review suite setup: point the fixture at the model.
  *
- * @param f Unused fixture.
+ * @return The fixture.
+ *
+ * @par Global state
+ * Changes @c fixture (its model pointer and reader block numbers).
  */
-static void before(void *f)
+static void *review_setup(void)
 {
-	ARG_UNUSED(f);
-	fake_reset();
+	static struct sdhost_review_fixture fixture;
+
+	fixture.hw = &hw;
+	for (int i = 0; i < 2; i++) {
+		fixture.race.readers[i].race = &fixture.race;
+		fixture.race.readers[i].lba0 = (i == 0) ? 100U : 200U;
+	}
+	return &fixture;
+}
+
+/**
+ * @brief Reset the model and driver, at 25 MHz.
+ *
+ * @param[out] m The model.
+ */
+static void reset_all(struct fake_hw *m)
+{
+	fake_reset(m);
 	sdhost_soft_reset(&dut);
 	zassert_ok(set_clock(25000000));
-	ubsan_driver_overflows = 0;
+	ubsan_reset();
+}
+
+/**
+ * @brief Before each sanity test: reset the model and driver.
+ *
+ * @param f The fixture.
+ */
+static void sanity_before(void *f)
+{
+	reset_all(((struct sdhost_sanity_fixture *)f)->hw);
+}
+
+/**
+ * @brief Before each review test: reset the model and driver.
+ *
+ * @param f The fixture.
+ */
+static void review_before(void *f)
+{
+	reset_all(((struct sdhost_review_fixture *)f)->hw);
 }
 
 /**
@@ -696,28 +816,28 @@ static int send_status(void)
 /**
  * @brief Tell whether the model saw a command.
  *
+ * @param[in,out] m The controller and card model.
  * @param op Command opcode.
  * @return True if @p op was issued since the last reset.
  */
-static bool logged(uint8_t op)
+static bool logged(struct fake_hw *m, uint8_t op)
 {
-	for (int i = 0; i < hw.nlog; i++) {
-		if (hw.log[i] == op) {
+	for (int i = 0; i < m->nlog; i++) {
+		if (m->log[i] == op) {
 			return true;
 		}
 	}
 	return false;
 }
 
-static uint32_t buf[WORDS(BLOCK) * 8];
-
 /**
- * @brief Assert that buf holds the card's data from a block on.
+ * @brief Assert that a buffer holds the card's data from a block on.
  *
+ * @param buf The buffer.
  * @param lba First block read.
  * @param words Number of words to check.
  */
-static void check_pattern(uint32_t lba, uint32_t words)
+static void check_pattern(const uint32_t *buf, uint32_t lba, uint32_t words)
 {
 	for (uint32_t i = 0; i < words; i++) {
 		zassert_equal(buf[i], pattern(lba, i), "word %u: 0x%08x, expected 0x%08x", i,
@@ -728,56 +848,57 @@ static void check_pattern(uint32_t lba, uint32_t words)
 /* ===== Sanity: the model and normal transfers ======================== */
 
 /** @brief A single-block read returns the block's data. */
-ZTEST(sdhost_sanity, test_single_block_read)
+ZTEST_F(sdhost_sanity, test_single_block_read)
 {
-	zassert_ok(xfer(SD_READ_SINGLE_BLOCK, 7, 1, BLOCK, buf, 200, 1000));
-	check_pattern(7, WORDS(BLOCK));
-	zassert_equal(hw.violations, 0);
+	zassert_ok(xfer(SD_READ_SINGLE_BLOCK, 7, 1, BLOCK, fixture->buf, 200, 1000));
+	check_pattern(fixture->buf, 7, WORDS(BLOCK));
+	zassert_equal(fixture->hw->violations, 0);
 }
 
 /** @brief A multi-block read returns the data and ends with CMD12. */
-ZTEST(sdhost_sanity, test_multi_block_read_and_stop)
+ZTEST_F(sdhost_sanity, test_multi_block_read_and_stop)
 {
-	zassert_ok(xfer(SD_READ_MULTIPLE_BLOCK, 9, 4, BLOCK, buf, 200, 1000));
-	check_pattern(9, WORDS(BLOCK) * 4);
-	zassert_true(logged(SD_STOP_TRANSMISSION), "CMD12 sent");
-	zassert_false(hw.card_in_data);
+	zassert_ok(xfer(SD_READ_MULTIPLE_BLOCK, 9, 4, BLOCK, fixture->buf, 200, 1000));
+	check_pattern(fixture->buf, 9, WORDS(BLOCK) * 4);
+	zassert_true(logged(fixture->hw, SD_STOP_TRANSMISSION), "CMD12 sent");
+	zassert_false(fixture->hw->card_in_data);
 }
 
 /** @brief A multi-block write with 5 ms busy succeeds. */
-ZTEST(sdhost_sanity, test_multi_block_write_short_busy)
+ZTEST_F(sdhost_sanity, test_multi_block_write_short_busy)
 {
 	for (uint32_t i = 0; i < WORDS(BLOCK) * 2; i++) {
-		buf[i] = pattern(3, i);
+		fixture->buf[i] = pattern(3, i);
 	}
-	hw.busy_stop_us = 5000; /* 5 ms programming */
-	zassert_ok(xfer(SD_WRITE_MULTIPLE_BLOCK, 3, 2, BLOCK, buf, 200, 1000));
-	zassert_equal(hw.nwritten, WORDS(BLOCK) * 2);
-	zassert_equal(hw.written[5], pattern(3, 5));
-	zassert_false(hw.card_in_data);
+	fixture->hw->busy_stop_us = 5000; /* 5 ms programming */
+	zassert_ok(xfer(SD_WRITE_MULTIPLE_BLOCK, 3, 2, BLOCK, fixture->buf, 200, 1000));
+	zassert_equal(fixture->hw->nwritten, (WORDS(BLOCK) * 2));
+	zassert_equal(fixture->hw->written[5], pattern(3, 5));
+	zassert_false(fixture->hw->card_in_data);
 	zassert_ok(send_status());
 }
 
 /** @brief A card that never ends its busy after CMD12 still fails the write, in time. */
-ZTEST(sdhost_sanity, test_endless_write_busy_times_out)
+ZTEST_F(sdhost_sanity, test_endless_write_busy_times_out)
 {
 	int64_t t0 = k_uptime_get();
 
-	hw.busy_stop_us = INT64_C(60) * 1000 * 1000;
-	zassert_equal(xfer(SD_WRITE_MULTIPLE_BLOCK, 3, 2, BLOCK, buf, 200, 1000), -ETIMEDOUT);
-	zassert_true(k_uptime_get() - t0 < 3000, "took %lld ms", k_uptime_get() - t0);
+	fixture->hw->busy_stop_us = INT64_C(60) * 1000 * 1000;
+	zassert_equal(xfer(SD_WRITE_MULTIPLE_BLOCK, 3, 2, BLOCK, fixture->buf, 200, 1000),
+		      -ETIMEDOUT);
+	zassert_true((k_uptime_get() - t0 < 3000), "took %lld ms", (k_uptime_get() - t0));
 }
 
 /** @brief The bus clock never exceeds the requested one. */
-ZTEST(sdhost_sanity, test_clock_divider)
+ZTEST_F(sdhost_sanity, test_clock_divider)
 {
 	zassert_ok(set_clock(25000000));
-	zassert_true(bus_hz() <= 25000000, "%u Hz", bus_hz());
+	zassert_true((bus_hz(fixture->hw) <= 25000000), "%u Hz", bus_hz(fixture->hw));
 	zassert_ok(set_clock(400000));
-	zassert_true(bus_hz() <= 400000, "%u Hz", bus_hz());
+	zassert_true((bus_hz(fixture->hw) <= 400000), "%u Hz", bus_hz(fixture->hw));
 }
 
-ZTEST_SUITE(sdhost_sanity, NULL, suite_setup, before, NULL, NULL);
+ZTEST_SUITE(sdhost_sanity, NULL, sanity_setup, sanity_before, NULL, NULL);
 
 /* ===== Review findings =============================================== */
 
@@ -789,10 +910,10 @@ ZTEST_SUITE(sdhost_sanity, NULL, suite_setup, before, NULL, NULL);
  * driver waited 100 ms, failed the write and left the controller busy.
  * Fixed by zephyr/patches/zephyr/sdhost-busy-timeouts.patch.
  */
-ZTEST(sdhost_review, test_f1_write_busy_250ms_after_stop)
+ZTEST_F(sdhost_review, test_f1_write_busy_250ms_after_stop)
 {
-	hw.busy_stop_us = INT64_C(250) * 1000;
-	zassert_ok(xfer(SD_WRITE_MULTIPLE_BLOCK, 3, 2, BLOCK, buf, 200, 10000),
+	fixture->hw->busy_stop_us = INT64_C(250) * 1000;
+	zassert_ok(xfer(SD_WRITE_MULTIPLE_BLOCK, 3, 2, BLOCK, fixture->buf, 200, 10000),
 		   "spec-compliant 250 ms busy after CMD12 reported as an error");
 	zassert_ok(send_status(), "next command fails");
 }
@@ -801,10 +922,10 @@ ZTEST(sdhost_review, test_f1_write_busy_250ms_after_stop)
  * @brief Finding 1: a write survives an SDXC card's 500 ms of busy after
  *        CMD12, even with a short data timeout.
  */
-ZTEST(sdhost_review, test_f1_write_busy_sdxc_limit)
+ZTEST_F(sdhost_review, test_f1_write_busy_sdxc_limit)
 {
-	hw.busy_stop_us = INT64_C(490) * 1000;
-	zassert_ok(xfer(SD_WRITE_MULTIPLE_BLOCK, 3, 2, BLOCK, buf, 200, 100),
+	fixture->hw->busy_stop_us = INT64_C(490) * 1000;
+	zassert_ok(xfer(SD_WRITE_MULTIPLE_BLOCK, 3, 2, BLOCK, fixture->buf, 200, 100),
 		   "490 ms busy after CMD12 reported as an error");
 	zassert_ok(send_status(), "next command fails");
 }
@@ -816,9 +937,9 @@ ZTEST(sdhost_review, test_f1_write_busy_sdxc_limit)
  * keep the card busy far longer (4.6.2.3). Seen on a real Pi 3A+: an
  * 8-block erase failed with "CMD38 ... NEW_FLAG never cleared".
  */
-ZTEST(sdhost_review, test_f1_erase_busy_past_cmd_timeout)
+ZTEST_F(sdhost_review, test_f1_erase_busy_past_cmd_timeout)
 {
-	hw.busy_r1b_us = INT64_C(2000) * 1000;
+	fixture->hw->busy_r1b_us = INT64_C(2000) * 1000;
 	zassert_ok(busy_cmd(SD_ERASE_BLOCK_OPERATION), "2 s erase busy reported as an error");
 	zassert_ok(send_status(), "next command fails");
 }
@@ -827,9 +948,9 @@ ZTEST(sdhost_review, test_f1_erase_busy_past_cmd_timeout)
  * @brief Finding 1: other busy (R1b) commands get the spec's 500 ms too,
  *        not the 200 ms command timeout.
  */
-ZTEST(sdhost_review, test_f1_r1b_busy_past_cmd_timeout)
+ZTEST_F(sdhost_review, test_f1_r1b_busy_past_cmd_timeout)
 {
-	hw.busy_r1b_us = INT64_C(400) * 1000;
+	fixture->hw->busy_r1b_us = INT64_C(400) * 1000;
 	zassert_ok(busy_cmd(SD_SELECT_CARD), "400 ms busy reported as an error");
 	zassert_ok(send_status(), "next command fails");
 }
@@ -841,11 +962,11 @@ ZTEST(sdhost_review, test_f1_r1b_busy_past_cmd_timeout)
  * the data state. Fixed by zephyr/patches/zephyr/sdhost-stop-open-read.patch
  * (finding 12's fix stops a failed open-ended read too).
  */
-ZTEST(sdhost_review, test_f2_failed_multiblock_read_is_stopped)
+ZTEST_F(sdhost_review, test_f2_failed_multiblock_read_is_stopped)
 {
-	hw.err_after = 200; /* CRC error in the second block */
-	zassert_not_ok(xfer(SD_READ_MULTIPLE_BLOCK, 9, 4, BLOCK, buf, 200, 1000));
-	zassert_false(hw.card_in_data, "card left in data state (no CMD12)");
+	fixture->hw->err_after = 200; /* CRC error in the second block */
+	zassert_not_ok(xfer(SD_READ_MULTIPLE_BLOCK, 9, 4, BLOCK, fixture->buf, 200, 1000));
+	zassert_false(fixture->hw->card_in_data, "card left in data state (no CMD12)");
 }
 
 /**
@@ -854,18 +975,18 @@ ZTEST(sdhost_review, test_f2_failed_multiblock_read_is_stopped)
  * Nothing is reset after a timeout: the abandoned read's late data sits in
  * the FIFO and the next read returns it as its own.
  */
-ZTEST(sdhost_review, test_f2_stale_fifo_after_timeout)
+ZTEST_F(sdhost_review, test_f2_stale_fifo_after_timeout)
 {
-	hw.resp_delay_once_us = INT64_C(300) * 1000; /* the card answers late */
-	zassert_equal(xfer(SD_READ_SINGLE_BLOCK, 5, 1, BLOCK, buf, 100, 1000), -ETIMEDOUT);
+	fixture->hw->resp_delay_once_us = INT64_C(300) * 1000; /* the card answers late */
+	zassert_equal(xfer(SD_READ_SINGLE_BLOCK, 5, 1, BLOCK, fixture->buf, 100, 1000), -ETIMEDOUT);
 	k_msleep(300); /* the abandoned read's data has arrived meanwhile */
 
-	memset(buf, 0, sizeof(buf));
-	int ret = xfer(SD_READ_SINGLE_BLOCK, 6, 1, BLOCK, buf, 200, 1000);
+	memset(fixture->buf, 0, sizeof(fixture->buf));
+	int ret = xfer(SD_READ_SINGLE_BLOCK, 6, 1, BLOCK, fixture->buf, 200, 1000);
 
 	if (ret == 0) {
-		zassert_equal(buf[0], pattern(6, 0),
-			      "read of block 6 returned block 5's data (0x%08x)", buf[0]);
+		zassert_equal(fixture->buf[0], pattern(6, 0),
+			      "read of block 6 returned block 5's data (0x%08x)", fixture->buf[0]);
 	}
 	zassert_ok(ret, "read after a timeout fails: %d", ret);
 }
@@ -878,18 +999,19 @@ ZTEST(sdhost_review, test_f2_stale_fifo_after_timeout)
  * the last one asked for, before the driver can stop the card ("data FSM
  * still busy after read", FIFO full). The model does it every time.
  */
-ZTEST(sdhost_review, test_f12_read_running_on_is_stopped)
+ZTEST_F(sdhost_review, test_f12_read_running_on_is_stopped)
 {
-	hw.run_on = true;
-	zassert_ok(xfer(SD_READ_MULTIPLE_BLOCK, 9, 4, BLOCK, buf, 200, 2000),
+	fixture->hw->run_on = true;
+	zassert_ok(xfer(SD_READ_MULTIPLE_BLOCK, 9, 4, BLOCK, fixture->buf, 200, 2000),
 		   "a read that ran on into the next block failed");
-	check_pattern(9, WORDS(BLOCK) * 4);
-	zassert_false(hw.card_in_data, "card left sending (no CMD12)");
+	check_pattern(fixture->buf, 9, WORDS(BLOCK) * 4);
+	zassert_false(fixture->hw->card_in_data, "card left sending (no CMD12)");
 	zassert_ok(send_status(), "the next command fails");
 
-	memset(buf, 0, sizeof(buf));
-	zassert_ok(xfer(SD_READ_SINGLE_BLOCK, 6, 1, BLOCK, buf, 200, 1000), "the next read fails");
-	check_pattern(6, WORDS(BLOCK));
+	memset(fixture->buf, 0, sizeof(fixture->buf));
+	zassert_ok(xfer(SD_READ_SINGLE_BLOCK, 6, 1, BLOCK, fixture->buf, 200, 1000),
+		   "the next read fails");
+	check_pattern(fixture->buf, 6, WORDS(BLOCK));
 }
 
 /**
@@ -899,13 +1021,13 @@ ZTEST(sdhost_review, test_f12_read_running_on_is_stopped)
  * block's CRC arrives. That is not a run-on: the error found at its end
  * must still fail the read.
  */
-ZTEST(sdhost_sanity, test_multi_block_read_crc_error_on_last_block)
+ZTEST_F(sdhost_sanity, test_multi_block_read_crc_error_on_last_block)
 {
-	hw.tail_us = 50;
-	hw.crc_err_last = true;
-	zassert_equal(xfer(SD_READ_MULTIPLE_BLOCK, 9, 4, BLOCK, buf, 200, 1000), -EILSEQ,
+	fixture->hw->tail_us = 50;
+	fixture->hw->crc_err_last = true;
+	zassert_equal(xfer(SD_READ_MULTIPLE_BLOCK, 9, 4, BLOCK, fixture->buf, 200, 1000), -EILSEQ,
 		      "a CRC error on the last block was not reported");
-	zassert_false(hw.card_in_data, "card left sending (no CMD12)");
+	zassert_false(fixture->hw->card_in_data, "card left sending (no CMD12)");
 	zassert_ok(send_status(), "the next command fails");
 }
 
@@ -916,12 +1038,12 @@ ZTEST(sdhost_sanity, test_multi_block_read_crc_error_on_last_block)
  * 80 MHz, over the 50 MHz High Speed maximum (SD Physical Layer Simplified
  * Spec v9.10, 4.3.11).
  */
-ZTEST(sdhost_review, test_f3_core_clock_not_250mhz)
+ZTEST_F(sdhost_review, test_f3_core_clock_not_250mhz)
 {
-	hw.core_hz = 400000000;
+	fixture->hw->core_hz = 400000000;
 	zassert_ok(set_clock(50000000));
-	zassert_true(bus_hz() <= 50000000, "bus runs at %u Hz for a 50 MHz request",
-		     bus_hz());
+	zassert_true((bus_hz(fixture->hw) <= 50000000), "bus runs at %u Hz for a 50 MHz request",
+		     bus_hz(fixture->hw));
 }
 
 /**
@@ -931,13 +1053,13 @@ ZTEST(sdhost_review, test_f3_core_clock_not_250mhz)
  * SDXC card's 500 ms write busy (SD Physical Layer Simplified Spec v9.10,
  * 4.6.2.2).
  */
-ZTEST(sdhost_review, test_f4_data_timeout_follows_clock)
+ZTEST_F(sdhost_review, test_f4_data_timeout_follows_clock)
 {
 	zassert_ok(set_clock(50000000));
-	uint64_t ms = (uint64_t)hw.regs[SDTOUT / 4] * 1000 / bus_hz();
+	uint64_t ms = (uint64_t)fixture->hw->regs[SDTOUT / 4] * 1000 / bus_hz(fixture->hw);
 
-	zassert_true(ms >= SPEC_WRITE_BUSY_MS, "hardware data timeout is %llu ms at %u Hz",
-		     ms, bus_hz());
+	zassert_true((ms >= SPEC_WRITE_BUSY_MS), "hardware data timeout is %llu ms at %u Hz", ms,
+		     bus_hz(fixture->hw));
 }
 
 /**
@@ -945,12 +1067,12 @@ ZTEST(sdhost_review, test_f4_data_timeout_follows_clock)
  *
  * Today -1 is a deadline already past: the first FIFO stall fails the read.
  */
-ZTEST(sdhost_review, test_f5_data_timeout_forever)
+ZTEST_F(sdhost_review, test_f5_data_timeout_forever)
 {
-	hw.data_delay_us = INT64_C(50) * 1000; /* data after 50 ms */
-	zassert_ok(xfer(SD_READ_SINGLE_BLOCK, 4, 1, BLOCK, buf, 200, SDHC_TIMEOUT_FOREVER),
+	fixture->hw->data_delay_us = INT64_C(50) * 1000; /* data after 50 ms */
+	zassert_ok(xfer(SD_READ_SINGLE_BLOCK, 4, 1, BLOCK, fixture->buf, 200, SDHC_TIMEOUT_FOREVER),
 		   "SDHC_TIMEOUT_FOREVER read gave up");
-	check_pattern(4, WORDS(BLOCK));
+	check_pattern(fixture->buf, 4, WORDS(BLOCK));
 }
 
 /**
@@ -965,24 +1087,21 @@ ZTEST(sdhost_review, test_f5_timeout_multiplication_overflow)
 		      "signed overflow (UB) in the driver at line %u", ubsan_last_line);
 }
 
-/* Finding 6: the driver spins for the whole transfer. */
-static volatile uint32_t low_prio_runs;
-static volatile bool low_prio_stop;
-
 /**
- * @brief Lower-priority thread: count how often it gets the CPU.
+ * @brief Finding 6's lower-priority thread: count how often it gets the CPU.
  *
- * @param a Unused.
+ * @param a The thread's state (struct low_prio).
  * @param b Unused.
  * @param c Unused.
  */
 static void low_prio_fn(void *a, void *b, void *c)
 {
-	ARG_UNUSED(a);
+	struct low_prio *lp = a;
+
 	ARG_UNUSED(b);
 	ARG_UNUSED(c);
-	while (!low_prio_stop) {
-		low_prio_runs++;
+	while (!lp->stop) {
+		lp->runs++;
 		k_msleep(1);
 	}
 }
@@ -994,41 +1113,53 @@ static void low_prio_fn(void *a, void *b, void *c)
 #pragma GCC diagnostic ignored "-Wpedantic"
 static K_THREAD_STACK_DEFINE(low_prio_stack, 4096);
 #pragma GCC diagnostic pop
-static struct k_thread low_prio_thread;
 
-/** @brief Start the lower-priority thread and let it run for 5 ms. */
-static void low_prio_start(void)
+/**
+ * @brief Start the lower-priority thread and let it run for 5 ms.
+ *
+ * @param[in,out] lp The thread's state.
+ *
+ * @par Global state
+ * Changes @c low_prio_stack (the thread runs on it).
+ */
+static void low_prio_start(struct low_prio *lp)
 {
-	low_prio_stop = false;
-	k_thread_create(&low_prio_thread, low_prio_stack, K_THREAD_STACK_SIZEOF(low_prio_stack),
-			low_prio_fn, NULL, NULL, NULL, K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
+	lp->stop = false;
+	k_thread_create(&lp->thread, low_prio_stack, K_THREAD_STACK_SIZEOF(low_prio_stack),
+			low_prio_fn, lp, NULL, NULL, K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
 	k_msleep(5);
 }
 
-/** @brief Stop the lower-priority thread and wait for it to exit. */
-static void low_prio_finish(void)
+/**
+ * @brief Stop the lower-priority thread and wait for it to exit.
+ *
+ * @param[in,out] lp The thread's state.
+ */
+static void low_prio_finish(struct low_prio *lp)
 {
-	low_prio_stop = true;
-	k_thread_join(&low_prio_thread, K_FOREVER);
+	lp->stop = true;
+	k_thread_join(&lp->thread, K_FOREVER);
 }
 
 /**
  * @brief Finding 6: a lower-priority thread runs during a 300 ms read.
+ *
+ * The driver spins for the whole transfer.
  */
-ZTEST(sdhost_review, test_f6_slow_read_starves_lower_priority)
+ZTEST_F(sdhost_review, test_f6_slow_read_starves_lower_priority)
 {
 	uint32_t before_runs;
 
-	low_prio_start();
+	low_prio_start(&fixture->low);
 
-	hw.data_delay_us = INT64_C(300) * 1000;
-	before_runs = low_prio_runs;
-	int ret = xfer(SD_READ_SINGLE_BLOCK, 4, 1, BLOCK, buf, 200, 1000);
-	uint32_t during = low_prio_runs - before_runs;
+	fixture->hw->data_delay_us = INT64_C(300) * 1000;
+	before_runs = fixture->low.runs;
+	int ret = xfer(SD_READ_SINGLE_BLOCK, 4, 1, BLOCK, fixture->buf, 200, 1000);
+	uint32_t during = fixture->low.runs - before_runs;
 
-	low_prio_finish();
+	low_prio_finish(&fixture->low);
 	zassert_ok(ret);
-	zassert_true(during > 0, "lower-priority thread starved for 300 ms (%u runs)", during);
+	zassert_true((during > 0), "lower-priority thread starved for 300 ms (%u runs)", during);
 }
 
 /**
@@ -1037,15 +1168,13 @@ ZTEST(sdhost_review, test_f6_slow_read_starves_lower_priority)
  * The 5-bit level is trusted: above 16 the free space wraps and the driver
  * writes a whole block into a full FIFO.
  */
-ZTEST(sdhost_review, test_f8_fifo_level_out_of_range)
+ZTEST_F(sdhost_review, test_f8_fifo_level_out_of_range)
 {
-	hw.fill_override = 20;
-	(void)xfer(SD_WRITE_SINGLE_BLOCK, 2, 1, BLOCK, buf, 200, 50);
-	zassert_equal(hw.overruns, 0, "%d words written into a full FIFO", hw.overruns);
+	fixture->hw->fill_override = 20;
+	(void)xfer(SD_WRITE_SINGLE_BLOCK, 2, 1, BLOCK, fixture->buf, 200, 50);
+	zassert_equal(fixture->hw->overruns, 0, "%d words written into a full FIFO",
+		      fixture->hw->overruns);
 }
-
-/* Finding 9: requests aren't serialised. */
-static volatile int race_errors;
 
 /**
  * @brief Read one block and check its first and last words.
@@ -1061,24 +1190,22 @@ static bool read_block_ok(uint32_t lba, uint32_t *b2)
 }
 
 /**
- * @brief Reader thread: read 10 blocks, counting failed or wrong reads.
+ * @brief Finding 9's reader thread: read 10 blocks, counting failed or
+ *        wrong reads.
  *
- * @param a Points to the first block number (100 or 200), which also picks
- *          the buffer.
+ * @param a The reader (struct reader): its first block and buffer.
  * @param b Unused.
  * @param c Unused.
  */
 static void reader_fn(void *a, void *b, void *c)
 {
-	uint32_t lba0 = *(const uint32_t *)a;
-	static uint32_t bufs[2][WORDS(BLOCK)];
-	uint32_t *b2 = bufs[lba0 == 100 ? 0 : 1];
+	struct reader *r = a;
 
 	ARG_UNUSED(b);
 	ARG_UNUSED(c);
 	for (uint32_t n = 0; n < 10; n++) {
-		if (!read_block_ok(lba0 + n, b2)) {
-			race_errors++;
+		if (!read_block_ok(r->lba0 + n, r->buf)) {
+			r->race->errors++;
 		}
 	}
 }
@@ -1090,30 +1217,40 @@ static void reader_fn(void *a, void *b, void *c)
 #pragma GCC diagnostic ignored "-Wpedantic"
 static K_THREAD_STACK_ARRAY_DEFINE(reader_stacks, 2, 8192);
 #pragma GCC diagnostic pop
-static struct k_thread readers[2];
 
-/* First block number of each reader thread. */
-static uint32_t reader_lba0[2] = {100, 200};
+/**
+ * @brief Run finding 9's two reader threads to the end.
+ *
+ * @param[in,out] race The readers.
+ *
+ * @par Global state
+ * Changes @c reader_stacks (the threads run on them).
+ */
+static void race_run(struct race *race)
+{
+	race->errors = 0;
+	for (int i = 0; i < 2; i++) {
+		k_thread_create(&race->threads[i], reader_stacks[i],
+				K_THREAD_STACK_SIZEOF(reader_stacks[i]), reader_fn,
+				&race->readers[i], NULL, NULL, K_PRIO_PREEMPT(5), 0, K_NO_WAIT);
+	}
+	for (int i = 0; i < 2; i++) {
+		k_thread_join(&race->threads[i], K_FOREVER);
+	}
+}
 
 /**
  * @brief Finding 9: two threads reading at once don't interleave.
  *
- * Today one issues a command mid data phase of the other, and reads get
- * each other's data.
+ * Requests aren't serialised: today one issues a command mid data phase of
+ * the other, and reads get each other's data.
  */
-ZTEST(sdhost_review, test_f9_concurrent_requests)
+ZTEST_F(sdhost_review, test_f9_concurrent_requests)
 {
-	race_errors = 0;
-	for (int i = 0; i < 2; i++) {
-		k_thread_create(&readers[i], reader_stacks[i], K_THREAD_STACK_SIZEOF(reader_stacks[i]),
-				reader_fn, &reader_lba0[i], NULL, NULL,
-				K_PRIO_PREEMPT(5), 0, K_NO_WAIT);
-	}
-	for (int i = 0; i < 2; i++) {
-		k_thread_join(&readers[i], K_FOREVER);
-	}
-	zassert_equal(hw.violations, 0, "%d commands issued mid data phase", hw.violations);
-	zassert_equal(race_errors, 0, "%d failed or wrong reads", race_errors);
+	race_run(&fixture->race);
+	zassert_equal(fixture->hw->violations, 0, "%d commands issued mid data phase",
+		      fixture->hw->violations);
+	zassert_equal(fixture->race.errors, 0, "%d failed or wrong reads", fixture->race.errors);
 }
 
 /**
@@ -1121,11 +1258,9 @@ ZTEST(sdhost_review, test_f9_concurrent_requests)
  *
  * The limit is get_host_props()' max_blk_len = 1.
  */
-ZTEST(sdhost_review, test_f10_block_size_over_limit)
+ZTEST_F(sdhost_review, test_f10_block_size_over_limit)
 {
-	static uint32_t big[2048 / 4];
-
-	zassert_equal(xfer(SD_READ_SINGLE_BLOCK, 1, 1, 2048, big, 200, 1000), -EINVAL,
+	zassert_equal(xfer(SD_READ_SINGLE_BLOCK, 1, 1, 2048, fixture->big, 200, 1000), -EINVAL,
 		      "2048-byte block accepted");
 }
 
@@ -1139,4 +1274,4 @@ ZTEST_EXPECT_FAIL(sdhost_review, test_f8_fifo_level_out_of_range);
 ZTEST_EXPECT_FAIL(sdhost_review, test_f9_concurrent_requests);
 ZTEST_EXPECT_FAIL(sdhost_review, test_f10_block_size_over_limit);
 
-ZTEST_SUITE(sdhost_review, NULL, suite_setup, before, NULL, NULL);
+ZTEST_SUITE(sdhost_review, NULL, review_setup, review_before, NULL, NULL);

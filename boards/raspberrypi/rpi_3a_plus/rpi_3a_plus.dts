@@ -6,6 +6,7 @@
  * same peripheral map, so this board reuses Zephyr's bcm2710 SoC support.
  * Derived from Zephyr's rpi_zero_2w board.
  *
+ * Copyright (c) 2026 Rob McKay
  * SPDX-License-Identifier: Apache-2.0
  */
 

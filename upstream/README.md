@@ -1,10 +1,15 @@
-# Zephyr PR #123216: one commit with the fix and its test
+# Zephyr PR #123216: adding the test to the fix
 
 [#123216](https://github.com/zephyrproject-rtos/zephyr/pull/123216)
-must be a single commit. Its first version had the fix only, with a
-title Zephyr's commit check rejects (no `area:` prefix, over 75
-characters, no body). These files turn it into one commit with the fix
-and the test:
+is one commit. Its first version had a title Zephyr's commit check
+rejects (no `area:` prefix, over 75 characters, no body). **On 27
+October 2026 it was amended** to `sd: check read and write ranges for
+overflow`, with a body and a `Signed-off-by`, and passes the check; it
+still has the fix only (`subsys/sd/sd_ops.c`, the same change as
+`zephyr/patches/zephyr/sd-ops-bounds-overflow.patch`).
+
+If a reviewer asks for a test, these files make it one commit with the
+fix and the test:
 
 | File | What |
 |---|---|

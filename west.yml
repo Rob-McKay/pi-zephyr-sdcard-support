@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Rob McKay
+# SPDX-License-Identifier: Apache-2.0
 # West manifest for the BCM283x SD card work.
 #
 # This repository is the manifest ("T2" topology): `west init -l` from here

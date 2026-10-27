@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026 Rob McKay
  * SPDX-License-Identifier: Apache-2.0
  *
  * Minimal stand-in for the Raspberry Pi firmware's ARM boot stub, used only

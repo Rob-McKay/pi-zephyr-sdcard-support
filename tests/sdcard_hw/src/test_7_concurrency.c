@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026 Rob McKay
  * SPDX-License-Identifier: Apache-2.0
  *
  * Suite 7: several threads using the card at once, as an application with
@@ -23,7 +24,7 @@
 #define STACK        4096
 #define READER_READS 200
 
-BUILD_ASSERT(R_THREADS + (WRITERS * REGION) <= SDQ_SCRATCH_BLOCKS, "scratch area too small");
+BUILD_ASSERT((R_THREADS + (WRITERS * REGION) <= SDQ_SCRATCH_BLOCKS), "scratch area too small");
 
 /** A writer's region, buffers and result. */
 struct writer {
@@ -34,8 +35,28 @@ struct writer {
 	uint8_t rbuf[CHUNK * SDQ_BLK];       /**< its read buffer */
 };
 
-static struct writer writers[WRITERS];
-static struct k_thread threads[WRITERS + 2];
+/** The reader's two copies of blocks 0-63, and its result. */
+struct reader {
+	int error;                   /**< first failure, 0 if none */
+	uint8_t first[64 * SDQ_BLK]; /**< the first read */
+	uint8_t again[64 * SDQ_BLK]; /**< each later read */
+};
+
+/** The lower-priority thread's count, and the flag that stops it. */
+struct low {
+	atomic_t wakeups;
+	atomic_t stop;
+};
+
+/** The suite's state: the shared card, and the threads'. */
+struct sdcard_7_concurrency_fixture {
+	struct sdq *q;
+	struct writer writers[WRITERS];
+	struct reader reader;
+	struct low low;
+	struct k_thread threads[WRITERS + 2];
+};
+
 /* Zephyr's definition macro can end in an empty statement: ISO C -Wpedantic
  * flags the ';' as extra. Nothing else is exempted.
  */
@@ -43,10 +64,6 @@ static struct k_thread threads[WRITERS + 2];
 #pragma GCC diagnostic ignored "-Wpedantic"
 static K_THREAD_STACK_ARRAY_DEFINE(stacks, WRITERS + 2, STACK);
 #pragma GCC diagnostic pop
-
-static int reader_error;
-static atomic_t low_wakeups;
-static atomic_t stop_low;
 
 /**
  * @brief Writer thread: write and verify its region, chunk by chunk, ROUNDS times.
@@ -83,23 +100,21 @@ static void writer_entry(void *p1, void *p2, void *p3)
 /**
  * @brief Reader thread: re-read blocks 0-63 and compare them with the first read.
  *
- * @param p1 Unused.
+ * @param p1 Its struct reader.
  * @param p2 Unused.
  * @param p3 Unused.
  */
 static void reader_entry(void *p1, void *p2, void *p3)
 {
-	static uint8_t first[64 * SDQ_BLK];
-	static uint8_t again[64 * SDQ_BLK];
+	struct reader *rd = p1;
 
-	ARG_UNUSED(p1);
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
-	reader_error = disk_access_read(SDQ_DISK, first, 0, 64);
-	for (int i = 0; i < READER_READS && reader_error == 0; i++) {
-		reader_error = disk_access_read(SDQ_DISK, again, 0, 64);
-		if (reader_error == 0 && memcmp(first, again, sizeof(first)) != 0) {
-			reader_error = -EBADMSG;
+	rd->error = disk_access_read(SDQ_DISK, rd->first, 0, 64);
+	for (int i = 0; i < READER_READS && rd->error == 0; i++) {
+		rd->error = disk_access_read(SDQ_DISK, rd->again, 0, 64);
+		if (rd->error == 0 && memcmp(rd->first, rd->again, sizeof(rd->first)) != 0) {
+			rd->error = -EBADMSG;
 		}
 	}
 }
@@ -107,57 +122,111 @@ static void reader_entry(void *p1, void *p2, void *p3)
 /**
  * @brief Lower-priority thread: count 1 ms sleeps until told to stop.
  *
- * @param p1 Unused.
+ * @param p1 Its struct low.
  * @param p2 Unused.
  * @param p3 Unused.
  */
 static void low_entry(void *p1, void *p2, void *p3)
 {
-	ARG_UNUSED(p1);
+	struct low *lo = p1;
+
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
-	while (atomic_get(&stop_low) == 0) {
+	while (atomic_get(&lo->stop) == 0) {
 		k_msleep(1);
-		atomic_inc(&low_wakeups);
+		atomic_inc(&lo->wakeups);
 	}
 }
 
+/**
+ * @brief Start the writers and the reader at @p prio, and the counting
+ *        thread just below it.
+ *
+ * @param[in,out] fx The suite's state.
+ * @param prio The test thread's priority.
+ *
+ * @par Global state
+ * Changes @c stacks (the threads run on them).
+ */
+static void start_threads(struct sdcard_7_concurrency_fixture *fx, int prio)
+{
+	fx->reader.error = 0;
+	atomic_set(&fx->low.wakeups, 0);
+	atomic_set(&fx->low.stop, 0);
+	for (int i = 0; i < WRITERS; i++) {
+		fx->writers[i].lba = fx->q->scratch + R_THREADS + ((uint32_t)i * REGION);
+		fx->writers[i].error = 0;
+		k_thread_create(&fx->threads[i], stacks[i], STACK, writer_entry, &fx->writers[i],
+				NULL, NULL, prio, 0, K_NO_WAIT);
+	}
+	k_thread_create(&fx->threads[WRITERS], stacks[WRITERS], STACK, reader_entry, &fx->reader,
+			NULL, NULL, prio, 0, K_NO_WAIT);
+	k_thread_create(&fx->threads[WRITERS + 1], stacks[WRITERS + 1], STACK, low_entry, &fx->low,
+			NULL, NULL, prio + 1, 0, K_NO_WAIT);
+}
+
 /** @brief Three writers and a reader at once all see their own data, and nothing fails. */
-ZTEST(sdcard_7_concurrency, test_1_writers_and_reader)
+ZTEST_F(sdcard_7_concurrency, test_1_writers_and_reader)
 {
 	int prio = k_thread_priority_get(k_current_get());
 	uint64_t t0 = sdq_now_us();
 	uint64_t ms;
 
-	sdq_need_scratch();
-	reader_error = 0;
-	atomic_set(&low_wakeups, 0);
-	atomic_set(&stop_low, 0);
-	for (int i = 0; i < WRITERS; i++) {
-		writers[i].lba = sdq.scratch + R_THREADS + ((uint32_t)i * REGION);
-		writers[i].error = 0;
-		k_thread_create(&threads[i], stacks[i], STACK, writer_entry, &writers[i], NULL, NULL,
-				prio, 0, K_NO_WAIT);
-	}
-	k_thread_create(&threads[WRITERS], stacks[WRITERS], STACK, reader_entry, NULL, NULL, NULL,
-			prio, 0, K_NO_WAIT);
-	k_thread_create(&threads[WRITERS + 1], stacks[WRITERS + 1], STACK, low_entry, NULL, NULL,
-			NULL, prio + 1, 0, K_NO_WAIT);
+	sdq_need_scratch(fixture->q);
+	start_threads(fixture, prio);
 	for (int i = 0; i <= WRITERS; i++) {
-		k_thread_join(&threads[i], K_FOREVER);
+		k_thread_join(&fixture->threads[i], K_FOREVER);
 	}
 	ms = (sdq_now_us() - t0) / 1000U;
-	atomic_set(&stop_low, 1);
-	k_thread_join(&threads[WRITERS + 1], K_FOREVER);
+	atomic_set(&fixture->low.stop, 1);
+	k_thread_join(&fixture->threads[WRITERS + 1], K_FOREVER);
 
 	TC_PRINT("%d writers x %u MB x %d rounds and a reader: %llu ms; a lower-priority thread "
 		 "ran %ld times in that time (%llu if never blocked)\n",
-		 WRITERS, REGION / 2048U, ROUNDS, ms, (long)atomic_get(&low_wakeups), ms);
+		 WRITERS, (REGION / 2048U), ROUNDS, ms, (long)atomic_get(&fixture->low.wakeups),
+		 ms);
 	for (int i = 0; i < WRITERS; i++) {
-		zassert_ok(writers[i].error, "writer %d: %d (bad block %u)", i, writers[i].error,
-			   writers[i].bad_lba);
+		zassert_ok(fixture->writers[i].error, "writer %d: %d (bad block %u)", i,
+			   fixture->writers[i].error, fixture->writers[i].bad_lba);
 	}
-	zassert_ok(reader_error, "reader: %d", reader_error);
+	zassert_ok(fixture->reader.error, "reader: %d", fixture->reader.error);
 }
 
-ZTEST_SUITE(sdcard_7_concurrency, NULL, sdq_setup, sdq_before, sdq_after, NULL);
+/**
+ * @brief Suite setup: the shared card, and the threads' state.
+ *
+ * @return The fixture.
+ *
+ * @par Global state
+ * Changes @c fixture (its card pointer).
+ */
+static void *concurrency_setup(void)
+{
+	static struct sdcard_7_concurrency_fixture fixture;
+
+	fixture.q = sdq_setup();
+	return &fixture;
+}
+
+/**
+ * @brief Before each test: check the card (sdq_before()).
+ *
+ * @param f The fixture.
+ */
+static void concurrency_before(void *f)
+{
+	sdq_before(((struct sdcard_7_concurrency_fixture *)f)->q);
+}
+
+/**
+ * @brief After each test: check the driver (sdq_after()).
+ *
+ * @param f The fixture.
+ */
+static void concurrency_after(void *f)
+{
+	sdq_after(((struct sdcard_7_concurrency_fixture *)f)->q);
+}
+
+ZTEST_SUITE(sdcard_7_concurrency, NULL, concurrency_setup, concurrency_before, concurrency_after,
+	    NULL);
