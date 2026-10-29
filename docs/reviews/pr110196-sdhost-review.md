@@ -517,6 +517,19 @@ So far finding 12 has struck in all nine tests that repeat multi-block reads, ac
 | Concurrency | All data right, 70.6 s (70.9 s); **the lower-priority thread ran 0 times** (0): finding 6 is unchanged |
 | Firmware | `zephyr.bin` 3,448,836 bytes (the same size), CRC-32 `568d1a94`, the same CRC as the image built in the development container from the same commit: unlike the eleventh run's, this build matched across machines |
 
+**Fourteenth run**, 29 October 2026, the same Pi and build as the thirteenth (v4.5.0, `zephyr.bin` CRC-32 `568d1a94`) on a third card, **32 GB** (62,333,952 blocks, 30,436 MB: SDHC by size, [PLS §3.3.2](#ref-capacity)) ([log](logs/2026-10-29-sd-qual-pi3a-sd32gb-run14.log)). It runs High Speed, so 4 bits at **50 MHz**, as the 64 GB SDXC card did. The first High Speed run with all six patches (the ninth, on the SDXC card, predated `sdhost-busy-timeouts.patch`). **Every test passed except finding 4's check**: 36 of 37, the 600 s soak and its final verify, with no recovery.
+
+| Area | Result (64 GB SDXC card, ninth run) |
+|---|---|
+| **Finding 4** | SDTOUT 314 ms at 50 MHz (314 ms): `test_data_timeout_covers_busy` failed, as on the SDXC card, because the controller's data timeout is fixed in clock cycles and halves at the doubled clock. On this card it did no harm: an SDHC card may stay busy up to 250 ms ([PLS §4.6.2.2](#ref-write)), within 314 ms, and its slowest random 4 KB write took 14.5 ms. The check asks for 500 ms, the SDXC limit and the spec's recommended minimum for any host; an SDXC card, or a slow SDHC card, at 50 MHz is where it would fail a write |
+| Speed | Sequential reads to 24.0 MB/s (23.5), writes to 22.6 MB/s (20.9); the multi-block stress test 1,000 reads, 128,793 blocks at 20.8 MB/s (20.3). Close to the 25 MB/s High Speed limit ([PLS Chapter 2](#ref-features)) |
+| Random 4 KB | Reads 2,061/s, average 0.49 ms (1,218/s, 0.82 ms); writes 636/s, average 1.6 ms, maximum 14.5 ms (603/s, 1.7 ms, 63.7 ms). A fast card: the 2 GB card manages 4 writes a second |
+| Bounds | Both refusal tests passed, including the wrapping range, with #123216's new helper |
+| Erase | 8 MB in 2 ms (12 ms) |
+| Soak | 600 s: 44,039 writes (3.3 GB), 50,655 reads (3.9 GB), 2,897 erases, every read checked; final verify passed. 5.7 / 6.9 MB/s (48,038 writes, 3.6 GB; 55,554 reads, 4.3 GB; 6.4 / 7.5 MB/s) |
+| Concurrency | All data right, 23.4 s (22.0 s); **the lower-priority thread ran 0 times** (0): finding 6, on a third card |
+| Recovery | 20 power cycles, slowest card init 42 ms (41 ms) |
+
 **Zephyr's own suites**, as the PR reports them (`make sd-zephyr-hw-test`), same Pi and card ([log](logs/2026-10-20-zephyr-sdhc-disk_access-pi3a-sdxc64.log)):
 
 | Suite | Result |

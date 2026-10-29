@@ -176,7 +176,9 @@ first with the suites sharing `struct sdq` and the race-free checks in
 suite 7, and in the thirteenth (the same day), the first on Zephyr
 v4.5.0. Random 4 KB writes stayed busy for up to 375 ms after CMD12,
 within the 500 ms the driver now allows (finding 1), and suite 7's
-lower-priority thread ran 0 times (finding 6).
+lower-priority thread ran 0 times (finding 6). A 32 GB High Speed card
+(the fourteenth run, also on v4.5.0) passed everything but finding 4's
+check: at 50 MHz the data timeout is 314 ms.
 
 ## Reading the results
 

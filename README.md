@@ -40,6 +40,11 @@ results and fixes that can be offered to the PR.
   first on Zephyr v4.5.0: every test passed in both, with busy of up to
   375 ms (of the 500 ms allowed), and a lower-priority thread still never
   ran during transfers (finding 6).
+- **A 32 GB High Speed card on v4.5.0** (29 October 2026, fourteenth run,
+  [log](docs/reviews/logs/2026-10-29-sd-qual-pi3a-sd32gb-run14.log)):
+  everything passed except finding 4's check (a 314 ms data timeout at
+  50 MHz, harmless on this card, whose slowest write took 14.5 ms). Reads
+  reach 24.0 MB/s, writes 22.6 MB/s; the soak wrote 3.3 GB and read 3.9 GB.
 - **Zephyr's own suites** on the same Pi and card: `sdhc` 5/5,
   `disk_access` 3/3.
 - **Upstream:** the SD stack's range-check fix is Zephyr PR
