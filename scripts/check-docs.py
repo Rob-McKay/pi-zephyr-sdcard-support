@@ -31,11 +31,15 @@ IMPLICIT_PARAMS = {"self", "cls"}
 # @param root Repository root.
 # @return Path of the XML directory.
 def run_doxygen(root):
+    out = os.path.join(root, "build", "doxygen")
     # Stale XML from files since removed would be checked too
-    shutil.rmtree(os.path.join(root, "build", "doxygen"), ignore_errors=True)
+    shutil.rmtree(out, ignore_errors=True)
+    # Doxygen creates only the last level of OUTPUT_DIRECTORY, so on a
+    # fresh checkout it would fail for want of build/
+    os.makedirs(out)
     subprocess.run(["doxygen", "docs/Doxyfile"], cwd=root, check=True,
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    return os.path.join(root, "build", "doxygen", "xml")
+    return os.path.join(out, "xml")
 
 
 ## @brief Concatenate the text inside an XML element.
