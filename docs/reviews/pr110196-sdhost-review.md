@@ -486,11 +486,23 @@ So far finding 12 has struck in all nine tests that repeat multi-block reads, ac
 | Area | Result |
 |---|---|
 | **Bus width** (`sdmmc-4bit-without-hs.patch`) | 4 bits at 25 MHz (Default Speed: the card has no High Speed). Sequential reads 3.1 → **12.0 MB/s**, writes 3.1 → **10.5 MB/s**, the multi-block stress test 3.0 → 10.9 MB/s: four times faster, as expected, and close to the 12.5 MB/s Default Speed limit |
-| **Finding 1** (`sdhost-busy-timeouts.patch`) | No write or erase failed (five writes and an erase failed in the tenth run). **The card needed the longer wait**: random 4 KB writes took 232 ms on average and up to **359 ms**, nearly all of it busy after CMD12. That is past the old 100 ms wait, and past the 250 ms the spec allows a card of this size ([PLS §4.6.2.2](#ref-write)), but within the 500 ms the spec recommends hosts allow every card, which the fix uses. 4 random writes a second (546 reads a second): this card is slow at small scattered writes, not the driver |
+| **Finding 1** (`sdhost-busy-timeouts.patch`) | No write or erase failed (five writes and an erase failed in the tenth run). **The card needed the longer wait**: random 4 KB writes took 232 ms on average and up to **359 ms**, nearly all of it busy after CMD12. That is past the old 100 ms wait, and past the 250 ms the spec allows a card of this size ([PLS §4.6.2.2](#ref-write)), but within the 500 ms the spec recommends hosts allow every card, which the fix uses. 4 random writes a second (1,164 reads a second): this card is slow at small scattered writes, not the driver |
 | Erase | The 8-block erase that failed before passed; 8 MB in 23 ms |
 | Soak | 600 s: 2,625 writes (200 MB), 3,113 reads (240 MB), 191 erases, every read checked; final verify passed. About 0.35 MB/s, set by the card's random-write busy |
 | Concurrency | All data right, 70 s (128 s at 1 bit); the lower-priority thread ran 0 times (finding 6) |
 | Firmware | `zephyr.bin` CRC-32 `b5cf7b4a`. It differs from the `f13d98ee` built in the development container, so these builds are not byte-for-byte reproducible across machines; the results show both fixes are in |
+
+**Twelfth run**, 29 October 2026, the same Pi and 2 GB card ([log](logs/2026-10-29-sd-qual-pi3a-sd2gb-run12.log)): the first on hardware of the restructured qualification suites (their state in one ztest fixture, `struct sdq`) and of the harness's two race fixes (`sdq_check()` and `sdhost_hw`'s `check_pattern()` now compute the expected words instead of comparing against a shared block). The driver and patches are the eleventh run's (the same Zephyr build, `a915b2f12675`). **Every test passed again**: 37 tests in 10 suites, the 600 s soak and its final verify, and no recovery. The restructuring changed nothing the card sees, as intended. The log was rebuilt from the cleaned console text in the eleventh run's form (its `START` lines, separators and per-test summary are ztest's fixed output, filled in from the run's own durations).
+
+| Area | Result (eleventh run) |
+|---|---|
+| Speed | Sequential reads to 12.0 MB/s (12.0), writes to 10.4 MB/s (10.5); the multi-block stress test 1,000 reads, 127,422 blocks at 10.9 MB/s (10.9); random 4 KB reads 1,166/s, average 0.86 ms (1,164/s, 0.86 ms). The same card at the same 4 bits and 25 MHz |
+| **Finding 1** | No write or erase failed. Random 4 KB writes: 4 a second, 6.6 ms minimum, 235 ms average, **369.7 ms** maximum (4.7, 232 and 359.1 ms). Still within the 500 ms `sdhost-busy-timeouts.patch` allows, by 130 ms, but 10 ms closer to it than before: the margin for this card's busy after CMD12 is about a quarter of the limit |
+| Finding 4 | SDTOUT 629 ms at 25 MHz (629 ms): the check passes on this card; the finding is about 50 MHz, where the same register value gives 314 ms (SDXC card, ninth run) |
+| Erase | 8 MB in 20 ms (23 ms) |
+| Soak | 600 s: 2,628 writes (198 MB), 3,118 reads (244 MB), 184 erases, every read checked; final verify passed (2,625, 200 MB; 3,113, 240 MB; 191) |
+| Concurrency | All data right, 70.9 s (69.6 s), checked by the race-free comparison; **the lower-priority thread ran 0 times** (0): finding 6 is unchanged |
+| Firmware | `zephyr.bin` 3,448,836 bytes, CRC-32 `3eae1e95` (3,457,028 bytes, `b5cf7b4a`): 8 KB smaller with the restructured tests; the card's copy matched the host's |
 
 **Zephyr's own suites**, as the PR reports them (`make sd-zephyr-hw-test`), same Pi and card ([log](logs/2026-10-20-zephyr-sdhc-disk_access-pi3a-sdxc64.log)):
 

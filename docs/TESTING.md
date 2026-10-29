@@ -170,6 +170,13 @@ run, with the corrected patch, logged none and passed everything but
 finding 4's check. (A sixth run with a first version of the patch showed
 it could lose a CRC error on a read's last block; see the review.)
 
+On a 2 GB card with all six patches, every test has passed: first in the
+eleventh run (22 October 2026), then in the twelfth (29 October 2026), the
+first with the suites sharing `struct sdq` and the race-free checks in
+suite 7. The twelfth run's random 4 KB writes stayed busy for up to
+370 ms after CMD12, within the 500 ms the driver now allows (finding 1),
+and suite 7's lower-priority thread ran 0 times (finding 6).
+
 ## Reading the results
 
 ztest's per-test durations wrap every 223.7 s (it uses the 32-bit cycle
