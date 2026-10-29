@@ -52,6 +52,23 @@ patches:
     date: 2026-10-21
     upstreamable: true
     merge-status: false
+  # Review finding 4, seen on a real Pi 3A+ (SDXC card, runs 4-9; 32 GB
+  # card, run 14): the controller's data timeout (SDTOUT) counts bus clock
+  # cycles and was never reprogrammed from its reset value, 0x00f00000,
+  # so it lasted 629 ms at 25 MHz but 314 ms at 50 MHz, short of the
+  # 500 ms write busy an SDXC card may take. Now set_io() sets it for 1 s
+  # at whatever clock it programs, and stopping a read that ran on waits
+  # at least that long for the block the stop cut short to end. On top of
+  # sdhost-busy-timeouts. Tested by tests/sdhost_review. Not yet sent
+  # upstream.
+  - path: zephyr/sdhost-data-timeout.patch
+    sha256sum: 4bdb36f1762352c27771ba8d8af3d8aaa7b5149b1a124c41399390937fcb8bbb
+    module: zephyr
+    author: Claude
+    email: noreply@anthropic.com
+    date: 2026-10-29
+    upstreamable: true
+    merge-status: false
   # The firmware driver gave the VideoCore the shared buffer's ARM
   # physical address. On BCM2837 the VideoCore must read ARM RAM through
   # the uncached alias in the soc node's dma-ranges (0xC0000000), as Linux

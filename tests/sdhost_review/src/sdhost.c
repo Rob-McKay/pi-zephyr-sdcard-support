@@ -1047,19 +1047,66 @@ ZTEST_F(sdhost_review, test_f3_core_clock_not_250mhz)
 }
 
 /**
+ * @brief Compute the controller's data timeout (SDTOUT) in milliseconds.
+ *
+ * @param m The controller and card model.
+ * @return SDTOUT cycles at the current bus clock, in ms.
+ */
+static uint64_t sdtout_ms(struct fake_hw *m)
+{
+	return (uint64_t)m->regs[SDTOUT / 4] * 1000 / bus_hz(m);
+}
+
+/**
  * @brief Finding 4: the hardware data timeout covers 500 ms at 50 MHz.
  *
- * SDTOUT stays at 0x00f00000 clock cycles: 0.31 s at 50 MHz, less than an
- * SDXC card's 500 ms write busy (SD Physical Layer Simplified Spec v9.10,
- * 4.6.2.2).
+ * The PR's driver leaves SDTOUT at 0x00f00000 clock cycles: 0.31 s at
+ * 50 MHz, less than an SDXC card's 500 ms write busy (SD Physical Layer
+ * Simplified Spec v9.10, 4.6.2.2). sdhost-data-timeout.patch reprograms
+ * it with the clock.
  */
 ZTEST_F(sdhost_review, test_f4_data_timeout_follows_clock)
 {
 	zassert_ok(set_clock(50000000));
-	uint64_t ms = (uint64_t)fixture->hw->regs[SDTOUT / 4] * 1000 / bus_hz(fixture->hw);
-
-	zassert_true((ms >= SPEC_WRITE_BUSY_MS), "hardware data timeout is %llu ms at %u Hz", ms,
+	zassert_true((sdtout_ms(fixture->hw) >= SPEC_WRITE_BUSY_MS),
+		     "hardware data timeout is %llu ms at %u Hz", sdtout_ms(fixture->hw),
 		     bus_hz(fixture->hw));
+}
+
+/**
+ * @brief Finding 4: the data timeout is the same at every clock the SD
+ *        stack uses, from identification (400 kHz) to High Speed.
+ *
+ * At least the 500 ms write busy, and no more than a few seconds, so a
+ * card that never answers still fails in time.
+ */
+ZTEST_F(sdhost_review, test_f4_data_timeout_at_every_clock)
+{
+	static const uint32_t clocks[] = {400000, 25000000, 50000000};
+
+	ARRAY_FOR_EACH(clocks, i) {
+		zassert_ok(set_clock(clocks[i]));
+		zassert_between_inclusive(sdtout_ms(fixture->hw), SPEC_WRITE_BUSY_MS, 2000,
+					  "hardware data timeout is %llu ms at %u Hz",
+					  sdtout_ms(fixture->hw), bus_hz(fixture->hw));
+	}
+}
+
+/**
+ * @brief Finding 4: stopping a read that ran on outlasts the data timeout.
+ *
+ * The stop cuts the run-on block short, and the controller ends that
+ * block only when its data timeout (now 1 s) expires. A request that
+ * gives no data timeout gets the driver's 500 ms default, which must not
+ * end the stop first.
+ */
+ZTEST_F(sdhost_review, test_f4_stop_outlasts_data_timeout)
+{
+	fixture->hw->run_on = true;
+	zassert_ok(xfer(SD_READ_MULTIPLE_BLOCK, 9, 4, BLOCK, fixture->buf, 200, 0),
+		   "a read that ran on failed while the cut-short block was ending");
+	check_pattern(fixture->buf, 9, WORDS(BLOCK) * 4);
+	zassert_ok(send_status(), "the next command fails");
 }
 
 /**
@@ -1266,7 +1313,6 @@ ZTEST_F(sdhost_review, test_f10_block_size_over_limit)
 
 ZTEST_EXPECT_FAIL(sdhost_review, test_f2_stale_fifo_after_timeout);
 ZTEST_EXPECT_FAIL(sdhost_review, test_f3_core_clock_not_250mhz);
-ZTEST_EXPECT_FAIL(sdhost_review, test_f4_data_timeout_follows_clock);
 ZTEST_EXPECT_FAIL(sdhost_review, test_f5_data_timeout_forever);
 ZTEST_EXPECT_FAIL(sdhost_review, test_f5_timeout_multiplication_overflow);
 ZTEST_EXPECT_FAIL(sdhost_review, test_f6_slow_read_starves_lower_priority);

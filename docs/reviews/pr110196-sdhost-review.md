@@ -102,6 +102,8 @@ This project pins `core_freq=250` and `core_freq_min=250` in `config.txt`, so **
 
 **Fix:** reprogram `SDTOUT` in `set_io` whenever the divider changes, for a fixed time of at least 500 ms. As I understand it, Linux sets it to half the clock rate, i.e. 500 ms.
 
+**Fixed here** by `zephyr/patches/zephyr/sdhost-data-timeout.patch`: `set_io()` now writes `SDTOUT` with the divider, for 1 s at the bus clock that divider gives (Linux's 500 ms is exactly the spec's figure; 1 s leaves a margin over it, and still fails a card that never answers within a second). It applies from identification at 400 kHz to High Speed at 50 MHz. One knock-on: when `sdhost-stop-open-read.patch` stops a read that ran on, the block the stop cuts short ends only when this timeout expires, so the stop now waits at least 1.1 s for it, whatever data timeout the request gave (a request with none gets the driver's 500 ms default, which would otherwise end the stop first; the SD stack's own reads give 10 s). `tests/sdhost_review` checks 50 MHz, that the timeout is between 500 ms and 2 s at 400 kHz, 25 MHz and 50 MHz, and a run-on read with no data timeout; all three fail without the patch. **Seen on the Pi** before the fix, on two cards at 50 MHz (the 64 GB SDXC card, runs 4-9, and the 32 GB card, run 14): 314 ms. Not yet confirmed on the Pi with the patch: the next run at 50 MHz should report `SDTOUT 50000000 cycles = 1000 ms` and pass `test_data_timeout_covers_busy`.
+
 ### 5. Timeout arithmetic: UB and IB (Medium)
 
 **Where:** lines 204-205, 288-289, 309-310, 396-397, 554-555.
@@ -351,7 +353,7 @@ Finding 7 uses the pinned `pinctrl_bcm2711.c` against a logged fake GPIO block (
 | 2 | `test_f2_failed_multiblock_read_is_stopped` | CRC error in block 2 of a 4-block CMD18 | No CMD12: the card is left in the data state |
 | 2 | `test_f2_stale_fifo_after_timeout` | Read of block 5 times out (card answers after 300 ms), then block 6 is read | The block 6 read returns block 5's data, with success |
 | 3 | `test_f3_core_clock_not_250mhz` | Core clock 400 MHz, 50 MHz requested | Bus runs at 80 MHz |
-| 4 | `test_f4_data_timeout_follows_clock` | 50 MHz bus | Hardware data timeout is 314 ms (< 500 ms SDXC busy, [PLS §4.6.2.2](#ref-write)) |
+| 4 | `test_f4_data_timeout_follows_clock`, `test_f4_data_timeout_at_every_clock`, `test_f4_stop_outlasts_data_timeout` | 50 MHz bus; then 400 kHz, 25 MHz and 50 MHz; a CMD18 that runs on, with no data timeout given | Hardware data timeout is 314 ms at 50 MHz (< 500 ms SDXC busy, [PLS §4.6.2.2](#ref-write)), 39 s at 400 kHz; with a 1 s timeout, the stop gave up at 500 ms before the cut-short block ended. Pass with `sdhost-data-timeout.patch` |
 | 5 | `test_f5_data_timeout_forever` | `SDHC_TIMEOUT_FOREVER` read, data after 50 ms | Read gives up at the first FIFO stall |
 | 5 | `test_f5_timeout_multiplication_overflow` | Command timeout 3,000,000 ms; driver built with `-fsanitize=signed-integer-overflow` | Signed overflow (UB) caught at line 204 (`timeout_ms * 1000`) |
 | 6 | `test_f6_slow_read_starves_lower_priority` | 300 ms read while a lower-priority thread wants the CPU every 1 ms | The other thread runs 0 times during the read |

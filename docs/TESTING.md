@@ -96,7 +96,7 @@ summary suite at the end fails if any recovery was needed.
 | 1 identify | `test_disk_ready`, `test_ioctls` | The disk is OK, has 512-byte blocks and the whole card's capacity; the sync and erase-size ioctls answer | |
 | | `test_bus_4bit` | The bus is 4 bits wide. Every SD memory card supports 4 bits; unpatched, Zephyr's SD stack widened the bus only for High Speed cards, so a Default Speed card failed this (ninth run, 2 GB card). `sdmmc-4bit-without-hs.patch` fixes it | |
 | | `test_bus_clock_in_spec` | The real SD clock (firmware core clock / divider) is between 400 kHz and 50 MHz | 3 |
-| | `test_data_timeout_covers_busy` | The hardware data timeout is at least 500 ms, an SDXC card's write busy limit | 4 |
+| | `test_data_timeout_covers_busy` | The hardware data timeout is at least 500 ms, an SDXC card's write busy limit. Unpatched, it was 314 ms at 50 MHz; `sdhost-data-timeout.patch` makes it 1 s at every clock | 4 |
 | 2 bootfs (read-only) | `test_1_layout`, `test_2_config_txt` | The MBR and FAT32 boot partition parse (walked by hand, no file system library); `config.txt` reads as the firmware booted from it | |
 | | `test_3_files_read_consistently` | Every file in the root directory reads the same a cluster per request, a block per request, and into a misaligned buffer | |
 | | `test_5_multi_block_read_stress` | 1000 multi-block reads (2-256 blocks) at random places in the partition's first 1 MB match a block-at-a-time copy: the CMD18 + CMD12 stop works every time | 12 |

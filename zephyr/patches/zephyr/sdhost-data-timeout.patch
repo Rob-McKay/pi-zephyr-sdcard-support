@@ -1,0 +1,65 @@
+diff --git a/drivers/sdhc/sdhc_bcm2835_sdhost.c b/drivers/sdhc/sdhc_bcm2835_sdhost.c
+index d859c4a575a..bb8607b641a 100644
+--- a/drivers/sdhc/sdhc_bcm2835_sdhost.c
++++ b/drivers/sdhc/sdhc_bcm2835_sdhost.c
+@@ -151,6 +151,17 @@ LOG_MODULE_REGISTER(sdhc_bcm2835_sdhost, CONFIG_SDHC_LOG_LEVEL);
+  */
+ #define SDHOST_ERASE_TIMEOUT_MS	10000
+ 
++/* Hardware data timeout: how long the controller waits for the card
++ * between data blocks, and for its busy after a write, before it raises
++ * SDHSTS_REW_TIME_OUT. SDTOUT counts bus clock cycles, so set_io()
++ * reprograms it whenever the clock changes: the reset value, 0x00f00000,
++ * is 629 ms at 25 MHz but only 314 ms at 50 MHz, short of the 500 ms
++ * write busy an SDXC card may take. The SD spec recommends more than
++ * 500 ms for every card (Physical Layer Simplified Specification v9.10,
++ * 4.6.2.2); 1 s leaves a margin.
++ */
++#define SDHOST_DATA_TIMEOUT_MS	1000
++
+ struct sdhc_bcm2835_sdhost_config {
+ 	DEVICE_MMIO_ROM;
+ 	const struct pinctrl_dev_config *pincfg;
+@@ -455,6 +466,15 @@ static uint32_t sdhost_calc_clk_div(uint32_t clk_in, uint32_t target_hz)
+ 	return MIN(DIV_ROUND_UP(clk_in, target_hz) - 2, SDCDIV_MAX_CDIV);
+ }
+ 
++/* SDTOUT value for SDHOST_DATA_TIMEOUT_MS at the bus clock that divider
++ * cdiv gives, clk_in / (cdiv + 2). Dividing before multiplying keeps it
++ * within 32 bits: it is at most clk_in / 2.
++ */
++static uint32_t sdhost_data_timeout_cycles(uint32_t clk_in, uint32_t cdiv)
++{
++	return clk_in / (cdiv + 2) / 1000 * SDHOST_DATA_TIMEOUT_MS;
++}
++
+ static int sdhc_bcm2835_sdhost_reset(const struct device *dev)
+ {
+ 	sdhost_soft_reset(dev);
+@@ -487,6 +507,7 @@ static int sdhc_bcm2835_sdhost_set_io(const struct device *dev,
+ 				 : sdhost_calc_clk_div(cfg->clock_freq, ios->clock);
+ 	data->cdiv = cdiv;
+ 	sys_write32(cdiv, base + SDCDIV);
++	sys_write32(sdhost_data_timeout_cycles(cfg->clock_freq, cdiv), base + SDTOUT);
+ 
+ 	/* Power: bit 0 of SDVDD. SDHost is 3.3V-only; signal_voltage
+ 	 * field is ignored (the only meaningful value is SD_VOL_3_3_V).
+@@ -563,7 +584,8 @@ static int sdhost_send_stop(const struct device *dev, int timeout_ms)
+  * on its own. So CMD12 is issued at once and the FIFO is emptied, the
+  * words discarded, until both the command and the data phase are done.
+  * A block the stop cut short ends with the controller's data timeout;
+- * that status is cleared with the rest.
++ * that status is cleared with the rest. So the wait is at least that
++ * timeout, whatever the request's own.
+  *
+  * Also used after a failed read, so the next request finds the
+  * controller idle.
+@@ -572,7 +594,7 @@ static int sdhost_stop_open_read(const struct device *dev, int timeout_ms)
+ {
+ 	uintptr_t base = DEVICE_MMIO_GET(dev);
+ 	int64_t start = k_uptime_get();
+-	int64_t deadline = start + timeout_ms;
++	int64_t deadline = start + MAX(timeout_ms, SDHOST_DATA_TIMEOUT_MS + SDHOST_CMD_TIMEOUT_MS);
+ 	uint32_t discarded = 0;
+ 	uint32_t sdcmd;
+ 	uint32_t sdhsts;

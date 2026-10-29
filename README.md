@@ -17,7 +17,9 @@ results and fixes that can be offered to the PR.
   multi-block read that runs on into the next block (finding 12), and a
   failed one (finding 2 for reads). `sdhost-busy-timeouts.patch` waits as
   long as the spec allows for a card's busy after a write or erase
-  (finding 1).
+  (finding 1). `sdhost-data-timeout.patch` sets the controller's data
+  timeout to 1 s at every bus clock; it was 314 ms at 50 MHz (finding 4,
+  not yet run on the Pi).
 - **On a real Pi 3A+ with a 64 GB SDXC card, with the fix** (21 October
   2026, [log](docs/reviews/logs/2026-10-21-sd-qual-pi3a-sdxc64-run8-corrected.log)):
   every qualification test passed except finding 4 (a 314 ms data timeout)
