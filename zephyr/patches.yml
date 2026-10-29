@@ -6,10 +6,11 @@
 # docs/UPSTREAM.md.
 patches:
   # BCM283x SDHost driver for the microSD slot (rpi_zero_2w upstream; the
-  # rpi_3a_plus board here enables it). Approved, milestone v4.6.0. Applies
-  # unchanged on the pinned commit. The driver under test.
+  # rpi_3a_plus board here enables it). Approved, milestone v4.6.0. From the
+  # PR's head 1df4a7e9da94 (rebased on 28 October 2026 onto v4.5.0-rc3, the
+  # driver unchanged); applies unchanged on v4.5.0. The driver under test.
   - path: zephyr/pr110196-bcm2835-sdhost.patch
-    sha256sum: 1df486cb4bb4c51d3d6fec5f1eaf88247d0332259dc1605384fe022e47ce8ca6
+    sha256sum: ca9f6ad0224dd48dbf9d2acf95370dac65e3ae85770a9a2e331219de5a50b638
     module: zephyr
     author: Jonathan E. Peace
     email: jep@alphabetiq.com
@@ -68,12 +69,13 @@ patches:
   # Zephyr's SD stack checked reads and writes with
   # start_block + num_blocks > block_count in 32 bits, which wraps for a
   # range ending past block 0xffffffff, so the request went to the card;
-  # only the card's out-of-range error stopped it. Now the same
-  # overflow-aware check as card_erase_blocks(). Not the SDHost driver's
-  # bug: still in Zephyr main on 21 October 2026. Tested by tests/sd_bounds
-  # and tests/sdcard_hw. Sent upstream as #123216.
+  # only the card's out-of-range error stopped it. Now read, write and
+  # erase share one overflow-aware check, card_range_valid(). Not the
+  # SDHost driver's bug: still in Zephyr main on 29 October 2026. Tested by
+  # tests/sd_bounds and tests/sdcard_hw. Sent upstream as #123216; this is
+  # its head c1790d7bb63c (amended 29 October 2026), without the header.
   - path: zephyr/sd-ops-bounds-overflow.patch
-    sha256sum: 5fea352cfe0e17201cc87a5238917345fcdb107fd1c79fdf9df3438d151abd31
+    sha256sum: 89dd75183fa49816c13430eabe98626a413461c1bd89f9355c19adf0b3df9170
     module: zephyr
     author: Claude
     email: noreply@anthropic.com

@@ -1,4 +1,4 @@
-From b3b496117cbdef82c34e7c427dbc57c8e22f09bc Mon Sep 17 00:00:00 2001
+From 1df4a7e9da9430ddb15e97330965f02d1fd45470 Mon Sep 17 00:00:00 2001
 From: "Jonathan E. Peace" <jep@alphabetiq.com>
 Date: Tue, 26 May 2026 12:03:22 -0700
 Subject: [PATCH] drivers: sdhc: add Broadcom BCM283x SDHost controller driver
@@ -71,7 +71,7 @@ Signed-off-by: Jonathan E. Peace <jep@alphabetiq.com>
  create mode 100644 dts/bindings/sdhc/brcm,bcm2835-sdhost.yaml
 
 diff --git a/boards/raspberrypi/rpi_zero_2w/rpi_zero_2w.dts b/boards/raspberrypi/rpi_zero_2w/rpi_zero_2w.dts
-index c42c4644f..b31e9643a 100644
+index c42c4644f87..b31e9643a6e 100644
 --- a/boards/raspberrypi/rpi_zero_2w/rpi_zero_2w.dts
 +++ b/boards/raspberrypi/rpi_zero_2w/rpi_zero_2w.dts
 @@ -33,6 +33,7 @@
@@ -102,7 +102,7 @@ index c42c4644f..b31e9643a 100644
 +	};
 +};
 diff --git a/drivers/sdhc/CMakeLists.txt b/drivers/sdhc/CMakeLists.txt
-index 0cbeb5f36..a9737a2fc 100644
+index 0cbeb5f3697..a9737a2fcda 100644
 --- a/drivers/sdhc/CMakeLists.txt
 +++ b/drivers/sdhc/CMakeLists.txt
 @@ -13,6 +13,7 @@ zephyr_library_sources_ifdef(CONFIG_SAM_HSMCI sam_hsmci.c)
@@ -114,7 +114,7 @@ index 0cbeb5f36..a9737a2fc 100644
  zephyr_library_sources_ifdef(CONFIG_SDHC_ESP32 sdhc_esp32.c)
  zephyr_library_sources_ifdef(CONFIG_SDHC_INFINEON_CAT1_PDL sdhc_infineon.c)
 diff --git a/drivers/sdhc/Kconfig b/drivers/sdhc/Kconfig
-index 60381c4ab..ef8cf5976 100644
+index 60381c4abad..ef8cf597673 100644
 --- a/drivers/sdhc/Kconfig
 +++ b/drivers/sdhc/Kconfig
 @@ -11,6 +11,7 @@ if SDHC
@@ -127,7 +127,7 @@ index 60381c4ab..ef8cf5976 100644
  source "drivers/sdhc/Kconfig.imx"
 diff --git a/drivers/sdhc/Kconfig.bcm2835_sdhost b/drivers/sdhc/Kconfig.bcm2835_sdhost
 new file mode 100644
-index 000000000..703b073e8
+index 00000000000..703b073e874
 --- /dev/null
 +++ b/drivers/sdhc/Kconfig.bcm2835_sdhost
 @@ -0,0 +1,13 @@
@@ -146,7 +146,7 @@ index 000000000..703b073e8
 +	  support yet, no DMA yet.
 diff --git a/drivers/sdhc/sdhc_bcm2835_sdhost.c b/drivers/sdhc/sdhc_bcm2835_sdhost.c
 new file mode 100644
-index 000000000..a9adc360b
+index 00000000000..a9adc360b32
 --- /dev/null
 +++ b/drivers/sdhc/sdhc_bcm2835_sdhost.c
 @@ -0,0 +1,793 @@
@@ -944,7 +944,7 @@ index 000000000..a9adc360b
 +
 +DT_INST_FOREACH_STATUS_OKAY(SDHC_BCM2835_SDHOST_INIT)
 diff --git a/dts/arm/broadcom/bcm283x-pinctrl.dtsi b/dts/arm/broadcom/bcm283x-pinctrl.dtsi
-index 59cd6d2e8..caee7d064 100644
+index 59cd6d2e849..caee7d06420 100644
 --- a/dts/arm/broadcom/bcm283x-pinctrl.dtsi
 +++ b/dts/arm/broadcom/bcm283x-pinctrl.dtsi
 @@ -147,4 +147,20 @@
@@ -969,7 +969,7 @@ index 59cd6d2e8..caee7d064 100644
 +	};
  };
 diff --git a/dts/arm64/broadcom/bcm2710.dtsi b/dts/arm64/broadcom/bcm2710.dtsi
-index aadd2489c..1515ddd51 100644
+index aadd2489c86..1515ddd5130 100644
 --- a/dts/arm64/broadcom/bcm2710.dtsi
 +++ b/dts/arm64/broadcom/bcm2710.dtsi
 @@ -173,5 +173,14 @@
@@ -989,7 +989,7 @@ index aadd2489c..1515ddd51 100644
  };
 diff --git a/dts/bindings/sdhc/brcm,bcm2835-sdhost.yaml b/dts/bindings/sdhc/brcm,bcm2835-sdhost.yaml
 new file mode 100644
-index 000000000..c04f0b6e4
+index 00000000000..c04f0b6e4f4
 --- /dev/null
 +++ b/dts/bindings/sdhc/brcm,bcm2835-sdhost.yaml
 @@ -0,0 +1,37 @@
@@ -1031,7 +1031,7 @@ index 000000000..c04f0b6e4
 +      Number of data lines wired between the controller and the
 +      card.
 diff --git a/include/zephyr/dt-bindings/pinctrl/bcm2711-pinctrl.h b/include/zephyr/dt-bindings/pinctrl/bcm2711-pinctrl.h
-index 631896f8c..e54a24a08 100644
+index 631896f8c20..e54a24a08bb 100644
 --- a/include/zephyr/dt-bindings/pinctrl/bcm2711-pinctrl.h
 +++ b/include/zephyr/dt-bindings/pinctrl/bcm2711-pinctrl.h
 @@ -145,4 +145,22 @@
