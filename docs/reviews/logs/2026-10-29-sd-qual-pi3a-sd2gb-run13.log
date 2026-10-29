@@ -1,0 +1,273 @@
+
+
+
+
+Raspberry Pi Bootcode
+Read File: config.txt, 454
+Read File: start_cd.elf, 844380 (bytes)
+Read File: fixup_cd.dat, 3280 (bytes)
+[0m<inf> sdhc_bcm2835_sdhost: mmc@3f202000 init ok (clk_in=250000000 Hz, bus=4-bit, SDEDM=0x00010800 [FSM=0x0 rd_thr=4 wr_thr=4])[0m
+*** Booting Zephyr OS build 41d10b597304 ***
+Running TESTSUITE sdcard_1_identify
+===================================================================
+card: 3862528 blocks of 512 bytes (1886 MB)
+bus: 4-bit, core clock 250000000 Hz / (SDCDIV 8 + 2) = 25000000 Hz
+scratch area: blocks 3731456-3862527 (64 MB, written by these tests)
+random seed: 12135879 (CONFIG_SDCARD_HW_SEED repeats it)
+START - test_bus_4bit
+ PASS - test_bus_4bit in 0.001 seconds
+===================================================================
+START - test_bus_clock_in_spec
+SD bus clock 25000000 Hz
+ PASS - test_bus_clock_in_spec in 0.003 seconds
+===================================================================
+START - test_data_timeout_covers_busy
+SDTOUT 15728640 cycles = 629 ms at 25000000 Hz
+ PASS - test_data_timeout_covers_busy in 0.005 seconds
+===================================================================
+START - test_disk_ready
+ PASS - test_disk_ready in 0.001 seconds
+===================================================================
+START - test_ioctls
+ PASS - test_ioctls in 0.001 seconds
+===================================================================
+TESTSUITE sdcard_1_identify succeeded
+Running TESTSUITE sdcard_2_bootfs
+===================================================================
+boot partition at block 2048: 1 blocks a cluster, 7 files
+START - test_1_layout
+ PASS - test_1_layout in 0.001 seconds
+===================================================================
+START - test_2_config_txt
+ PASS - test_2_config_txt in 0.002 seconds
+===================================================================
+START - test_3_files_read_consistently
+LICENC~1.BRO     1594 bytes  crc32 ac43b6db  (9 ms for the 3 reads)
+BOOTCODE.BIN    52624 bytes  crc32 53c9b136  (265 ms for the 3 reads)
+CONFIG.TXT        454 bytes  crc32 f04fd842  (1 ms for the 3 reads)
+FIXUP_CD.DAT     3280 bytes  crc32 5aec4a9b  (16 ms for the 3 reads)
+START_CD.ELF   844380 bytes  crc32 0a4e81da  (4273 ms for the 3 reads)
+ZEPHYR.BIN    3448836 bytes  crc32 568d1a94  (17419 ms for the 3 reads)
+ZEPHYR.CRC          9 bytes  crc32 a67aa816  (1 ms for the 3 reads)
+ PASS - test_3_files_read_consistently in 22.025 seconds
+===================================================================
+START - test_4_image_crc_matches_host
+ PASS - test_4_image_crc_matches_host in 5.808 seconds
+===================================================================
+START - test_5_multi_block_read_stress
+1000 multi-block reads, 131128 blocks, 10900 kB/s
+ PASS - test_5_multi_block_read_stress in 7.043 seconds
+===================================================================
+TESTSUITE sdcard_2_bootfs succeeded
+Running TESTSUITE sdcard_3_integrity
+===================================================================
+START - test_1_patterns
+ PASS - test_1_patterns in 0.020 seconds
+===================================================================
+START - test_2_transfer_sizes
+ PASS - test_2_transfer_sizes in 1.115 seconds
+===================================================================
+START - test_3_chunking
+ PASS - test_3_chunking in 1.132 seconds
+===================================================================
+START - test_4_misaligned_buffers
+ PASS - test_4_misaligned_buffers in 0.080 seconds
+===================================================================
+START - test_5_neighbours_untouched
+ PASS - test_5_neighbours_untouched in 0.087 seconds
+===================================================================
+START - test_6_overwrite
+ PASS - test_6_overwrite in 0.136 seconds
+===================================================================
+START - test_7_address_bits
+ PASS - test_7_address_bits in 1.056 seconds
+===================================================================
+START - test_8_random_mix
+ PASS - test_8_random_mix in 23.610 seconds
+===================================================================
+TESTSUITE sdcard_3_integrity succeeded
+Running TESTSUITE sdcard_4_bounds
+===================================================================
+START - test_1_first_blocks
+ PASS - test_1_first_blocks in 0.008 seconds
+===================================================================
+START - test_2_last_blocks
+ PASS - test_2_last_blocks in 0.253 seconds
+===================================================================
+START - test_3_past_the_end_refused
+ PASS - test_3_past_the_end_refused in 0.002 seconds
+===================================================================
+START - test_4_wrapping_range_refused
+ PASS - test_4_wrapping_range_refused in 0.002 seconds
+===================================================================
+START - test_5_whole_range_sampled
+ PASS - test_5_whole_range_sampled in 0.505 seconds
+===================================================================
+TESTSUITE sdcard_4_bounds succeeded
+Running TESTSUITE sdcard_5_erase
+===================================================================
+START - test_1_small_erase_exact
+erased blocks read as 0x00
+ PASS - test_1_small_erase_exact in 0.257 seconds
+===================================================================
+START - test_2_single_block_then_write
+ PASS - test_2_single_block_then_write in 0.021 seconds
+===================================================================
+START - test_3_large_erase
+8 MB erase: 0 after 24 ms
+ PASS - test_3_large_erase in 1.677 seconds
+===================================================================
+TESTSUITE sdcard_5_erase succeeded
+Running TESTSUITE sdcard_6_perf
+===================================================================
+START - test_1_sequential_read
+sequential read, from block 0:
+     1 blocks/request:   1189 kB/s
+     8 blocks/request:   5175 kB/s
+    64 blocks/request:  10258 kB/s
+   256 blocks/request:  11583 kB/s
+  2048 blocks/request:  12037 kB/s
+ PASS - test_1_sequential_read in 4.756 seconds
+===================================================================
+START - test_2_sequential_write
+sequential write, scratch area:
+     1 blocks/request:    271 kB/s
+     8 blocks/request:   1783 kB/s
+    64 blocks/request:   7426 kB/s
+   256 blocks/request:   9514 kB/s
+  2048 blocks/request:  10415 kB/s
+ PASS - test_2_sequential_write in 11.519 seconds
+===================================================================
+START - test_3_random_read
+random 4 KB read: 500 ops, 1163 ops/s, latency min 400 us, avg 859 us, max 1900 us
+ PASS - test_3_random_read in 0.438 seconds
+===================================================================
+START - test_4_random_write
+random 4 KB write: 500 ops, 4 ops/s, latency min 2100 us, avg 235508 us, max 374900 us
+ PASS - test_4_random_write in 118.184 seconds
+===================================================================
+TESTSUITE sdcard_6_perf succeeded
+Running TESTSUITE sdcard_7_concurrency
+===================================================================
+START - test_1_writers_and_reader
+3 writers x 1 MB x 40 rounds and a reader: 70641 ms; a lower-priority thread ran 0 times in that time (70641 if never blocked)
+ PASS - test_1_writers_and_reader in 70.654 seconds
+===================================================================
+TESTSUITE sdcard_7_concurrency succeeded
+Running TESTSUITE sdcard_8_recovery
+===================================================================
+START - test_1_power_cycles
+20 power cycles; slowest card init 28 ms
+ PASS - test_1_power_cycles in 0.658 seconds
+===================================================================
+START - test_2_write_then_power_off
+ PASS - test_2_write_then_power_off in 0.197 seconds
+===================================================================
+START - test_3_unanswered_command
+CID ioctl: -116 (CMD2 is not answered in transfer state)
+ PASS - test_3_unanswered_command in 0.007 seconds
+===================================================================
+TESTSUITE sdcard_8_recovery succeeded
+Running TESTSUITE sdcard_9_soak
+===================================================================
+START - test_1_random_workload
+soak for 600 s over 64 MB
+soak 30 s: 122 writes (8 MB, 300 kB/s), 118 reads (7 MB, 254 kB/s), 12 erases
+soak 60 s: 252 writes (17 MB, 306 kB/s), 275 reads (19 MB, 337 kB/s), 28 erases
+soak 90 s: 385 writes (31 MB, 361 kB/s), 417 reads (31 MB, 368 kB/s), 35 erases
+soak 120 s: 514 writes (38 MB, 332 kB/s), 576 reads (41 MB, 358 kB/s), 41 erases
+soak 150 s: 642 writes (46 MB, 327 kB/s), 711 reads (52 MB, 369 kB/s), 48 erases
+soak 180 s: 774 writes (58 MB, 340 kB/s), 864 reads (67 MB, 395 kB/s), 55 erases
+soak 210 s: 906 writes (67 MB, 336 kB/s), 991 reads (77 MB, 385 kB/s), 63 erases
+soak 240 s: 1038 writes (78 MB, 344 kB/s), 1108 reads (85 MB, 374 kB/s), 71 erases
+soak 270 s: 1170 writes (86 MB, 336 kB/s), 1271 reads (96 MB, 376 kB/s), 80 erases
+soak 300 s: 1309 writes (97 MB, 342 kB/s), 1436 reads (106 MB, 373 kB/s), 86 erases
+soak 330 s: 1438 writes (108 MB, 346 kB/s), 1548 reads (118 MB, 375 kB/s), 96 erases
+soak 360 s: 1565 writes (126 MB, 367 kB/s), 1665 reads (127 MB, 369 kB/s), 99 erases
+soak 390 s: 1684 writes (131 MB, 353 kB/s), 1814 reads (138 MB, 372 kB/s), 109 erases
+soak 420 s: 1815 writes (139 MB, 348 kB/s), 1947 reads (143 MB, 359 kB/s), 115 erases
+soak 450 s: 1948 writes (147 MB, 344 kB/s), 2111 reads (156 MB, 365 kB/s), 123 erases
+soak 480 s: 2082 writes (159 MB, 348 kB/s), 2281 reads (169 MB, 371 kB/s), 133 erases
+soak 510 s: 2211 writes (166 MB, 342 kB/s), 2435 reads (181 MB, 373 kB/s), 143 erases
+soak 540 s: 2338 writes (175 MB, 340 kB/s), 2595 reads (195 MB, 378 kB/s), 155 erases
+soak 570 s: 2469 writes (185 MB, 340 kB/s), 2760 reads (205 MB, 378 kB/s), 164 erases
+soak 600 s: 2595 writes (193 MB, 338 kB/s), 2888 reads (215 MB, 377 kB/s), 170 erases
+soak 600 s: 2595 writes (193 MB, 338 kB/s), 2888 reads (215 MB, 377 kB/s), 170 erases
+ PASS - test_1_random_workload in 152.655 seconds
+===================================================================
+START - test_2_final_verify
+scratch area verified
+ PASS - test_2_final_verify in 6.483 seconds
+===================================================================
+TESTSUITE sdcard_9_soak succeeded
+Running TESTSUITE sdcard_zz_summary
+===================================================================
+START - test_no_recovery_needed
+recoveries needed during the run: 0, of which 0 failed
+ PASS - test_no_recovery_needed in 0.005 seconds
+===================================================================
+TESTSUITE sdcard_zz_summary succeeded
+
+------ TESTSUITE SUMMARY START ------
+
+SUITE PASS - 100.00% [sdcard_1_identify]: pass = 5, fail = 0, skip = 0, total = 5 duration = 0.011 seconds
+ - PASS - [sdcard_1_identify.test_bus_4bit] duration = 0.001 seconds
+ - PASS - [sdcard_1_identify.test_bus_clock_in_spec] duration = 0.003 seconds
+ - PASS - [sdcard_1_identify.test_data_timeout_covers_busy] duration = 0.005 seconds
+ - PASS - [sdcard_1_identify.test_disk_ready] duration = 0.001 seconds
+ - PASS - [sdcard_1_identify.test_ioctls] duration = 0.001 seconds
+
+SUITE PASS - 100.00% [sdcard_2_bootfs]: pass = 5, fail = 0, skip = 0, total = 5 duration = 34.879 seconds
+ - PASS - [sdcard_2_bootfs.test_1_layout] duration = 0.001 seconds
+ - PASS - [sdcard_2_bootfs.test_2_config_txt] duration = 0.002 seconds
+ - PASS - [sdcard_2_bootfs.test_3_files_read_consistently] duration = 22.025 seconds
+ - PASS - [sdcard_2_bootfs.test_4_image_crc_matches_host] duration = 5.808 seconds
+ - PASS - [sdcard_2_bootfs.test_5_multi_block_read_stress] duration = 7.043 seconds
+
+SUITE PASS - 100.00% [sdcard_3_integrity]: pass = 8, fail = 0, skip = 0, total = 8 duration = 27.236 seconds
+ - PASS - [sdcard_3_integrity.test_1_patterns] duration = 0.020 seconds
+ - PASS - [sdcard_3_integrity.test_2_transfer_sizes] duration = 1.115 seconds
+ - PASS - [sdcard_3_integrity.test_3_chunking] duration = 1.132 seconds
+ - PASS - [sdcard_3_integrity.test_4_misaligned_buffers] duration = 0.080 seconds
+ - PASS - [sdcard_3_integrity.test_5_neighbours_untouched] duration = 0.087 seconds
+ - PASS - [sdcard_3_integrity.test_6_overwrite] duration = 0.136 seconds
+ - PASS - [sdcard_3_integrity.test_7_address_bits] duration = 1.056 seconds
+ - PASS - [sdcard_3_integrity.test_8_random_mix] duration = 23.610 seconds
+
+SUITE PASS - 100.00% [sdcard_4_bounds]: pass = 5, fail = 0, skip = 0, total = 5 duration = 0.770 seconds
+ - PASS - [sdcard_4_bounds.test_1_first_blocks] duration = 0.008 seconds
+ - PASS - [sdcard_4_bounds.test_2_last_blocks] duration = 0.253 seconds
+ - PASS - [sdcard_4_bounds.test_3_past_the_end_refused] duration = 0.002 seconds
+ - PASS - [sdcard_4_bounds.test_4_wrapping_range_refused] duration = 0.002 seconds
+ - PASS - [sdcard_4_bounds.test_5_whole_range_sampled] duration = 0.505 seconds
+
+SUITE PASS - 100.00% [sdcard_5_erase]: pass = 3, fail = 0, skip = 0, total = 3 duration = 1.955 seconds
+ - PASS - [sdcard_5_erase.test_1_small_erase_exact] duration = 0.257 seconds
+ - PASS - [sdcard_5_erase.test_2_single_block_then_write] duration = 0.021 seconds
+ - PASS - [sdcard_5_erase.test_3_large_erase] duration = 1.677 seconds
+
+SUITE PASS - 100.00% [sdcard_6_perf]: pass = 4, fail = 0, skip = 0, total = 4 duration = 134.897 seconds
+ - PASS - [sdcard_6_perf.test_1_sequential_read] duration = 4.756 seconds
+ - PASS - [sdcard_6_perf.test_2_sequential_write] duration = 11.519 seconds
+ - PASS - [sdcard_6_perf.test_3_random_read] duration = 0.438 seconds
+ - PASS - [sdcard_6_perf.test_4_random_write] duration = 118.184 seconds
+
+SUITE PASS - 100.00% [sdcard_7_concurrency]: pass = 1, fail = 0, skip = 0, total = 1 duration = 70.654 seconds
+ - PASS - [sdcard_7_concurrency.test_1_writers_and_reader] duration = 70.654 seconds
+
+SUITE PASS - 100.00% [sdcard_8_recovery]: pass = 3, fail = 0, skip = 0, total = 3 duration = 0.862 seconds
+ - PASS - [sdcard_8_recovery.test_1_power_cycles] duration = 0.658 seconds
+ - PASS - [sdcard_8_recovery.test_2_write_then_power_off] duration = 0.197 seconds
+ - PASS - [sdcard_8_recovery.test_3_unanswered_command] duration = 0.007 seconds
+
+SUITE PASS - 100.00% [sdcard_9_soak]: pass = 2, fail = 0, skip = 0, total = 2 duration = 159.138 seconds
+ - PASS - [sdcard_9_soak.test_1_random_workload] duration = 152.655 seconds
+ - PASS - [sdcard_9_soak.test_2_final_verify] duration = 6.483 seconds
+
+SUITE PASS - 100.00% [sdcard_zz_summary]: pass = 1, fail = 0, skip = 0, total = 1 duration = 0.005 seconds
+ - PASS - [sdcard_zz_summary.test_no_recovery_needed] duration = 0.005 seconds
+
+------ TESTSUITE SUMMARY END ------
+
+===================================================================
+PROJECT EXECUTION SUCCESSFUL

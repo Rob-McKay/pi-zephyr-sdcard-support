@@ -33,12 +33,13 @@ results and fixes that can be offered to the PR.
   card's bus 1 bit wide (3.1 MB/s); with `sdmmc-4bit-without-hs.patch` it
   runs at 4 bits, 12.0 MB/s reads and 10.5 MB/s writes. Its writes stay
   busy for up to 359 ms, which failed them before
-  `sdhost-busy-timeouts.patch` (finding 1). The latest run, the twelfth
-  (29 October 2026,
-  [log](docs/reviews/logs/2026-10-29-sd-qual-pi3a-sd2gb-run12.log)),
-  was the first of the restructured test suites: every test passed again,
-  with busy of up to 370 ms (of the 500 ms allowed), and a lower-priority
-  thread still never ran during transfers (finding 6).
+  `sdhost-busy-timeouts.patch` (finding 1). The twelfth run (29 October
+  2026, [log](docs/reviews/logs/2026-10-29-sd-qual-pi3a-sd2gb-run12.log))
+  was the first of the restructured test suites, and the thirteenth
+  ([log](docs/reviews/logs/2026-10-29-sd-qual-pi3a-sd2gb-run13.log)) the
+  first on Zephyr v4.5.0: every test passed in both, with busy of up to
+  375 ms (of the 500 ms allowed), and a lower-priority thread still never
+  ran during transfers (finding 6).
 - **Zephyr's own suites** on the same Pi and card: `sdhc` 5/5,
   `disk_access` 3/3.
 - **Upstream:** the SD stack's range-check fix is Zephyr PR

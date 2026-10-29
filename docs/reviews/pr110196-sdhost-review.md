@@ -504,6 +504,19 @@ So far finding 12 has struck in all nine tests that repeat multi-block reads, ac
 | Concurrency | All data right, 70.9 s (69.6 s), checked by the race-free comparison; **the lower-priority thread ran 0 times** (0): finding 6 is unchanged |
 | Firmware | `zephyr.bin` 3,448,836 bytes, CRC-32 `3eae1e95` (3,457,028 bytes, `b5cf7b4a`): 8 KB smaller with the restructured tests; the card's copy matched the host's |
 
+**Thirteenth run**, 29 October 2026, the same Pi and 2 GB card ([log](logs/2026-10-29-sd-qual-pi3a-sd2gb-run13.log)): the first on **Zephyr v4.5.0** (build `41d10b597304`, the release commit), with #110196 regenerated from its rebased head `1df4a7e9da94` (the driver unchanged) and #123216's 29 October version of the range check (`card_range_valid()`, shared by read, write and erase). **Every test passed again**: 37 tests in 10 suites, the 600 s soak and its final verify, and no recovery. The move from the old pin to the release changed nothing measurable. The log is rebuilt in the earlier logs' form from the console text, whose colour codes' escape characters and summary dashes were lost in copying.
+
+| Area | Result (twelfth run) |
+|---|---|
+| Speed | Sequential reads to 12.0 MB/s (12.0), writes to 10.4 MB/s (10.4); the multi-block stress test 1,000 reads, 131,128 blocks at 10.9 MB/s (10.9); random 4 KB reads 1,163/s, average 0.86 ms, maximum 1.9 ms (1,166/s, 0.86 ms, 1.2 ms) |
+| **Finding 1** | No write or erase failed. Random 4 KB writes: 4 a second, 2.1 ms minimum, 236 ms average, **374.9 ms** maximum (6.6, 235 and 369.7 ms). Within the 500 ms `sdhost-busy-timeouts.patch` allows, by 125 ms. The maximum has risen in each run on this card, 359.1, 369.7, then 374.9 ms: small steps, but worth watching as the card wears |
+| Bounds | `test_4_wrapping_range_refused` passed with #123216's new helper, as `tests/sd_bounds` predicted |
+| Finding 4 | SDTOUT 629 ms at 25 MHz (629 ms) |
+| Erase | 8 MB in 24 ms (20 ms) |
+| Soak | 600 s: 2,595 writes (193 MB), 2,888 reads (215 MB), 170 erases, every read checked; final verify passed (2,628, 198 MB; 3,118, 244 MB; 184) |
+| Concurrency | All data right, 70.6 s (70.9 s); **the lower-priority thread ran 0 times** (0): finding 6 is unchanged |
+| Firmware | `zephyr.bin` 3,448,836 bytes (the same size), CRC-32 `568d1a94`, the same CRC as the image built in the development container from the same commit: unlike the eleventh run's, this build matched across machines |
+
 **Zephyr's own suites**, as the PR reports them (`make sd-zephyr-hw-test`), same Pi and card ([log](logs/2026-10-20-zephyr-sdhc-disk_access-pi3a-sdxc64.log)):
 
 | Suite | Result |

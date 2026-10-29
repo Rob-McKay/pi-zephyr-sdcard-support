@@ -173,9 +173,10 @@ it could lose a CRC error on a read's last block; see the review.)
 On a 2 GB card with all six patches, every test has passed: first in the
 eleventh run (22 October 2026), then in the twelfth (29 October 2026), the
 first with the suites sharing `struct sdq` and the race-free checks in
-suite 7. The twelfth run's random 4 KB writes stayed busy for up to
-370 ms after CMD12, within the 500 ms the driver now allows (finding 1),
-and suite 7's lower-priority thread ran 0 times (finding 6).
+suite 7, and in the thirteenth (the same day), the first on Zephyr
+v4.5.0. Random 4 KB writes stayed busy for up to 375 ms after CMD12,
+within the 500 ms the driver now allows (finding 1), and suite 7's
+lower-priority thread ran 0 times (finding 6).
 
 ## Reading the results
 
