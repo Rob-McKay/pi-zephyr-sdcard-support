@@ -87,12 +87,12 @@ patches:
   # start_block + num_blocks > block_count in 32 bits, which wraps for a
   # range ending past block 0xffffffff, so the request went to the card;
   # only the card's out-of-range error stopped it. Now read, write and
-  # erase share one overflow-aware check, card_range_valid(). Not the
-  # SDHost driver's bug: still in Zephyr main on 29 October 2026. Tested by
+  # erase share one overflow-aware check, card_block_range_valid(). Not the
+  # SDHost driver's bug: still in Zephyr main on 30 October 2026. Tested by
   # tests/sd_bounds and tests/sdcard_hw. Sent upstream as #123216; this is
-  # its head c1790d7bb63c (amended 29 October 2026), without the header.
+  # its head 2748a5f8d2e3 (amended 30 October 2026), without the header.
   - path: zephyr/sd-ops-bounds-overflow.patch
-    sha256sum: 89dd75183fa49816c13430eabe98626a413461c1bd89f9355c19adf0b3df9170
+    sha256sum: fd89bd208c512b4f2fb3bdc066e532a02e6fe6420be0dcb0dd680787f25d0ff4
     module: zephyr
     author: Claude
     email: noreply@anthropic.com

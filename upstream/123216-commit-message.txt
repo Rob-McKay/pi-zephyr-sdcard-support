@@ -3,8 +3,8 @@ sd: check read and write ranges for overflow
 card_read_blocks() and card_write_blocks() rejected a range with
 (start_block + num_blocks) > card->block_count. The sum is uint32_t, so
 a range that wraps past 0xffffffff passed the check and was sent to the
-card. The range check is now done by a new card_range_valid() helper,
-used by read, write and erase.
+card. The range check now goes through a new card_block_range_valid()
+helper, used by read, write and erase.
 
 Add tests/subsys/sd/bounds, which runs the SD stack's block read and
 write calls against a fake SD host controller that records the data

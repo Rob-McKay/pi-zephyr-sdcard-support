@@ -51,8 +51,9 @@ results and fixes that can be offered to the PR.
   `disk_access` 3/3.
 - **Upstream:** the SD stack's range-check fix is Zephyr PR
   [#123216](https://github.com/zephyrproject-rtos/zephyr/pull/123216)
-  (`sd: check read and write ranges for overflow`, amended on 29 October
-  2026 to share one range check between read, write and erase), open and
+  (`sd: check read and write ranges for overflow`, amended on 29 and 30
+  October 2026 to share one range check between read, write and erase),
+  open and
   awaiting review; the rest isn't posted yet
   ([UPSTREAM.md](docs/UPSTREAM.md)). Zephyr is pinned to the v4.5.0
   release.
