@@ -7,12 +7,10 @@
 patches:
   # BCM283x SDHost driver for the microSD slot (rpi_zero_2w upstream; the
   # rpi_3a_plus board here enables it). Approved, milestone v4.6.0. The
-  # PR's head 94b76f2d1684 (19 November 2026), which is based on main;
-  # here its driver, Kconfig and binding files and its pin-header hunk,
-  # with its devicetree, pinctrl and board hunks in their v4.5.0 context
-  # (the same lines added). The driver under test.
+  # PR's head 94b76f2d1684 (19 November 2026) as it is: the west.yml pin
+  # is the main commit it is based on. The driver under test.
   - path: zephyr/pr110196-bcm2835-sdhost.patch
-    sha256sum: 05c63ca38d220dba706b0a103fc09fda8bad505c5bc0075221e105dcd9dddd2b
+    sha256sum: f2cdddc1b2f88adfe10cd2604b4d46bbfee62bda465cae6b0b06ff2caa3451a3
     module: zephyr
     author: Jonathan E. Peace
     email: jep@alphabetiq.com
@@ -74,51 +72,16 @@ patches:
   # The firmware driver gave the VideoCore the shared buffer's ARM
   # physical address. On BCM2837 the VideoCore must read ARM RAM through
   # the uncached alias in the soc node's dma-ranges (0xC0000000), as Linux
-  # does; on a real Pi 3A+ the firmware never answered. Also waits up to
-  # 1 s for a reply, as Linux, instead of 100 ms. The tests read the real
-  # core clock through it. Not yet sent upstream.
+  # does; on a real Pi 3A+ the firmware never answered. The callback that
+  # main's f395ab2221e added accepts only a reply carrying the buffer's
+  # address, so it compares against the bus address too. (Main has this
+  # patch's earlier 1 s reply timeout, from the same commit.) The tests
+  # read the real core clock through it. Not yet sent upstream.
   - path: zephyr/rpi-fw-bus-address.patch
-    sha256sum: bcb06393d91a3a0812e4863c08ad09187fc2a01f1355e65253ae21a3c0260d82
+    sha256sum: 5ba0ec6a88ad5f3661bf3eecf1c4fb2057c82734f2bb67c575a3445c0511fd03
     module: zephyr
     author: Claude
     email: noreply@anthropic.com
     date: 2026-10-18
-    upstreamable: true
-    merge-status: false
-  # Zephyr's SD stack checked reads and writes with
-  # start_block + num_blocks > block_count in 32 bits, which wraps for a
-  # range ending past block 0xffffffff, so the request went to the card;
-  # only the card's out-of-range error stopped it. Now read, write and
-  # erase share one overflow-aware check, card_block_range_valid(). Not the
-  # SDHost driver's bug. Tested by tests/sd_bounds and tests/sdcard_hw.
-  # Sent upstream as #123216, which merged into main on 17 November 2026
-  # as f513d993a397, the same change as this patch (its head 2748a5f8d2e3
-  # without the header). v4.5.0 doesn't have it: drop this patch once the
-  # west.yml pin includes that commit (v4.6.0, or a v4.5 release if it is
-  # backported).
-  - path: zephyr/sd-ops-bounds-overflow.patch
-    sha256sum: fd89bd208c512b4f2fb3bdc066e532a02e6fe6420be0dcb0dd680787f25d0ff4
-    module: zephyr
-    author: Claude
-    email: noreply@anthropic.com
-    date: 2026-10-21
-    upstreamable: true
-    merge-pr: https://github.com/zephyrproject-rtos/zephyr/pull/123216
-    merge-status: true
-    merge-commit: f513d993a39733ce51b398998dc288b7db53da90
-    merge-date: 2026-11-17
-  # Zephyr's SD stack switched a card to a 4-bit bus only after switching
-  # it to High Speed (sdmmc_init_hs()), so a card without High Speed stayed
-  # on one data line, at a quarter of the speed: seen on a 2 GB card on a
-  # real Pi 3A+ (ninth run, 3.1 MB/s). Every SD memory card supports 4 bits
-  # (SD Physical Layer Simplified Specification v9.10, section 5.6,
-  # SD_BUS_WIDTHS). Now the bus is widened either way. Still in Zephyr main
-  # on 1 November 2026. Tested by tests/sd_bus_width. Not yet sent upstream.
-  - path: zephyr/sdmmc-4bit-without-hs.patch
-    sha256sum: 10e59f54d95227fcfc9f8df8a13541f99a8c2fd092f8cf14fde1f97d4a932cbf
-    module: zephyr
-    author: Claude
-    email: noreply@anthropic.com
-    date: 2026-10-21
     upstreamable: true
     merge-status: false

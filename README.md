@@ -52,10 +52,15 @@ results and fixes that can be offered to the PR.
 - **Upstream:** the SD stack's range-check fix, Zephyr PR
   [#123216](https://github.com/zephyrproject-rtos/zephyr/pull/123216)
   (`sd: check read and write ranges for overflow`), **merged into Zephyr
-  main on 17 November 2026**; it is carried here until the pin includes
-  it. The rest isn't posted yet
-  ([UPSTREAM.md](docs/UPSTREAM.md)). Zephyr is pinned to the v4.5.0
-  release.
+  main on 17 November 2026**, and the pin includes it. The rest isn't
+  posted yet
+  ([UPSTREAM.md](docs/UPSTREAM.md)).
+- **Zephyr pin:** the main commit #110196 is based on (`c9e38773358`,
+  19 November 2026), so the driver PR applies as posted; it moves to the
+  v4.6.0 tag at release (scheduled for April 2027). That pin includes
+  #123216 and main's own fix for the 4-bit bus, so this repository now
+  carries five patches: the driver PR, three driver fixes and the
+  firmware mailbox's bus address.
 
 ## Layout
 

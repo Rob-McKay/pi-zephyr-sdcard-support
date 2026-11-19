@@ -4,7 +4,8 @@
 # Zephyr's SD stack range checks (subsys/sd/sd_ops.c), against a fake SD
 # host controller: reads and writes past the card's end, including ranges
 # whose end wraps past block 0xffffffff, must be refused before they reach
-# the controller (zephyr/patches/zephyr/sd-ops-bounds-overflow.patch).
+# the controller. Fixed in Zephyr by #123216 (commit f513d993a397); this
+# repository carried the fix as a patch until its Zephyr pin included it.
 
 cmake_minimum_required(VERSION 3.20.0)
 

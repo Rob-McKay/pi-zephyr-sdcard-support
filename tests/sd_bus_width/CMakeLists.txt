@@ -3,8 +3,9 @@
 #
 # Zephyr's SD stack bus width choice (subsys/sd/sdmmc.c), against a fake
 # card on a fake SD host controller: a card is switched to a 4-bit bus
-# whether or not it supports High Speed
-# (zephyr/patches/zephyr/sdmmc-4bit-without-hs.patch).
+# whether or not it supports High Speed. Fixed in Zephyr by a8937199708;
+# this repository carried its own fix as a patch until its Zephyr pin
+# included that commit.
 
 cmake_minimum_required(VERSION 3.20.0)
 

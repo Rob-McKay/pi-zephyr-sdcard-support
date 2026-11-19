@@ -94,7 +94,7 @@ summary suite at the end fails if any recovery was needed.
 | Suite | Tests | Checks | Review finding |
 |---|---|---|---|
 | 1 identify | `test_disk_ready`, `test_ioctls` | The disk is OK, has 512-byte blocks and the whole card's capacity; the sync and erase-size ioctls answer | |
-| | `test_bus_4bit` | The bus is 4 bits wide. Every SD memory card supports 4 bits; unpatched, Zephyr's SD stack widened the bus only for High Speed cards, so a Default Speed card failed this (ninth run, 2 GB card). `sdmmc-4bit-without-hs.patch` fixes it | |
+| | `test_bus_4bit` | The bus is 4 bits wide. Every SD memory card supports 4 bits; Zephyr's SD stack used to widen the bus only for High Speed cards, so a Default Speed card failed this (ninth run, 2 GB card). This repository's `sdmmc-4bit-without-hs.patch` fixed it until Zephyr main fixed it itself (`a8937199708`), which the pin now includes | |
 | | `test_bus_clock_in_spec` | The real SD clock (firmware core clock / divider) is between 400 kHz and 50 MHz | 3 |
 | | `test_data_timeout_covers_busy` | The hardware data timeout is at least 500 ms, an SDXC card's write busy limit. Unpatched, it was 314 ms at 50 MHz; `sdhost-data-timeout.patch` makes it 1 s at every clock | 4 |
 | 2 bootfs (read-only) | `test_1_layout`, `test_2_config_txt` | The MBR and FAT32 boot partition parse (walked by hand, no file system library); `config.txt` reads as the firmware booted from it | |
@@ -111,7 +111,7 @@ summary suite at the end fails if any recovery was needed.
 | | `test_8_random_mix` | 1000 random writes and reads (1-256 blocks) in an 8 MB region, checked against a shadow copy, then the whole region | 2 |
 | 4 bounds | `test_1_first_blocks`, `test_2_last_blocks` | Blocks 0-63 read the same twice; the card's last block and last 64 blocks read and write | |
 | | `test_3_past_the_end_refused` | Reads and writes past the end are refused (-EINVAL) before reaching the card, and the card still works after | |
-| | `test_4_wrapping_range_refused` | A read of block 0xffffffff is refused too. Unpatched, Zephyr's SD stack checks `start + count`, which wraps, so the request reaches the card (not the driver's bug); `sd-ops-bounds-overflow.patch` fixes it (sent to Zephyr as [#123216](https://github.com/zephyrproject-rtos/zephyr/pull/123216), merged on 17 November 2026), and `tests/sd_bounds` checks the same without hardware. Failed in runs up to the eighth, which predate the patch; passed in the ninth, on two cards | |
+| | `test_4_wrapping_range_refused` | A read of block 0xffffffff is refused too. Zephyr's SD stack used to check `start + count`, which wraps, so the request reached the card (not the driver's bug); fixed by [#123216](https://github.com/zephyrproject-rtos/zephyr/pull/123216) (merged on 17 November 2026, in the pin), carried here as `sd-ops-bounds-overflow.patch` until then, and `tests/sd_bounds` checks the same without hardware. Failed in runs up to the eighth, which predate the patch; passed in the ninth, on two cards | |
 | | `test_5_whole_range_sampled` | One block per MB across the whole card reads | |
 | 5 erase | `test_1_small_erase_exact`, `test_2_single_block_then_write` | Erased blocks read as all 0x00 or all 0xff; their neighbours keep their data; writing after an erase works | |
 | | `test_3_large_erase` | An 8 MB erase, which holds the card busy, completes (its time is printed) | 1 |

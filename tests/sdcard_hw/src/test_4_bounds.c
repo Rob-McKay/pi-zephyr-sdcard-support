@@ -50,11 +50,11 @@ ZTEST_F(sdcard_4_bounds, test_3_past_the_end_refused)
  * @brief A range whose end wraps past block 0xffffffff is refused (-EINVAL)
  *        before reaching the card.
  *
- * Unpatched, Zephyr's SD stack checks reads and writes with start + count >
+ * Zephyr's SD stack used to check reads and writes with start + count >
  * block_count (subsys/sd/sd_ops.c), which wraps to a small number for
- * block 0xffffffff, so the request goes to the card and only the card's
- * error stops it. zephyr/patches/zephyr/sd-ops-bounds-overflow.patch makes
- * the check overflow-aware, as the erase check already is.
+ * block 0xffffffff, so the request went to the card and only the card's
+ * error stopped it. #123216 (Zephyr commit f513d993a397) made the check
+ * overflow-aware, as the erase check already was.
  */
 ZTEST_F(sdcard_4_bounds, test_4_wrapping_range_refused)
 {

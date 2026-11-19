@@ -1,4 +1,4 @@
-From e481b40a960a4653c5bbcef1e32a25d40abe258e Mon Sep 17 00:00:00 2001
+From 94b76f2d1684532df2da910f4d79b8f5881306bb Mon Sep 17 00:00:00 2001
 From: "Jonathan E. Peace" <jep@alphabetiq.com>
 Date: Tue, 26 May 2026 12:03:22 -0700
 Subject: [PATCH] drivers: sdhc: add Broadcom BCM283x SDHost controller driver
@@ -70,10 +70,10 @@ Signed-off-by: Jonathan E. Peace <jep@alphabetiq.com>
  create mode 100644 dts/bindings/sdhc/brcm,bcm2835-sdhost.yaml
 
 diff --git a/boards/raspberrypi/rpi_zero_2w/rpi_zero_2w.dts b/boards/raspberrypi/rpi_zero_2w/rpi_zero_2w.dts
-index c42c4644f87..b31e9643a6e 100644
+index b83c3034b0c..3a4fab50712 100644
 --- a/boards/raspberrypi/rpi_zero_2w/rpi_zero_2w.dts
 +++ b/boards/raspberrypi/rpi_zero_2w/rpi_zero_2w.dts
-@@ -33,6 +33,7 @@
+@@ -23,6 +23,7 @@
  
  	aliases {
  		die-temp0 = &vc_thermal;
@@ -81,7 +81,7 @@ index c42c4644f87..b31e9643a6e 100644
  	};
  
  	reserved-memory {
-@@ -72,3 +73,18 @@
+@@ -60,3 +61,18 @@
  	current-speed = <115200>;
  	status = "okay";
  };
@@ -101,7 +101,7 @@ index c42c4644f87..b31e9643a6e 100644
 +	};
 +};
 diff --git a/drivers/sdhc/CMakeLists.txt b/drivers/sdhc/CMakeLists.txt
-index 0cbeb5f3697..a9737a2fcda 100644
+index 0b63e0d16a5..802c20efb4f 100644
 --- a/drivers/sdhc/CMakeLists.txt
 +++ b/drivers/sdhc/CMakeLists.txt
 @@ -13,6 +13,7 @@ zephyr_library_sources_ifdef(CONFIG_SAM_HSMCI sam_hsmci.c)
@@ -110,10 +110,10 @@ index 0cbeb5f3697..a9737a2fcda 100644
  zephyr_library_sources_ifdef(CONFIG_SDHC_AMEBA sdhc_ameba.c)
 +zephyr_library_sources_ifdef(CONFIG_SDHC_BCM2835_SDHOST sdhc_bcm2835_sdhost.c)
  zephyr_library_sources_ifdef(CONFIG_SDHC_BFLB sdhc_bflb.c)
- zephyr_library_sources_ifdef(CONFIG_SDHC_ESP32 sdhc_esp32.c)
- zephyr_library_sources_ifdef(CONFIG_SDHC_INFINEON_CAT1_PDL sdhc_infineon.c)
+ zephyr_library_sources_ifdef(CONFIG_SDHC_COMMON sdhc_common.c)
+ zephyr_library_sources_ifdef(CONFIG_SDHC_EMUL emul/sdhc_emul_core.c emul/sdhc_emul.c)
 diff --git a/drivers/sdhc/Kconfig b/drivers/sdhc/Kconfig
-index 60381c4abad..ef8cf597673 100644
+index cf68f323007..b6dbd8f0b57 100644
 --- a/drivers/sdhc/Kconfig
 +++ b/drivers/sdhc/Kconfig
 @@ -11,6 +11,7 @@ if SDHC
@@ -969,14 +969,13 @@ index 59cd6d2e849..caee7d06420 100644
 +	};
  };
 diff --git a/dts/arm64/broadcom/bcm2710.dtsi b/dts/arm64/broadcom/bcm2710.dtsi
-index aadd2489c86..1515ddd5130 100644
+index 2b6b3c1e440..4ecfee8b67a 100644
 --- a/dts/arm64/broadcom/bcm2710.dtsi
 +++ b/dts/arm64/broadcom/bcm2710.dtsi
-@@ -173,5 +173,14 @@
- 			#size-cells = <0>;
+@@ -170,6 +170,15 @@
  			status = "disabled";
  		};
-+
+ 
 +		sdhost: mmc@3f202000 {
 +			compatible = "brcm,bcm2835-sdhost";
 +			reg = <0x3f202000 0x100>;
@@ -985,8 +984,10 @@ index aadd2489c86..1515ddd5130 100644
 +			bus-width = <4>;
 +			status = "disabled";
 +		};
- 	};
- };
++
+ 		/*
+ 		 * The three BSC masters share BCM2835_IRQ_I2C, so enabling
+ 		 * more than one at a time trips a build-time IRQ_CONNECT
 diff --git a/dts/bindings/sdhc/brcm,bcm2835-sdhost.yaml b/dts/bindings/sdhc/brcm,bcm2835-sdhost.yaml
 new file mode 100644
 index 00000000000..bd457687eaf

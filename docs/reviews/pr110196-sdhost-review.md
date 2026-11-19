@@ -588,9 +588,16 @@ Card timings above are from the SD Association's **SD Specifications Part 1, Phy
   switched to 4 bits only after switching to High Speed, so a Default
   Speed card stayed 1 bit wide at a quarter of the speed (ninth run, 2 GB
   card). Fixed by `sdmmc-4bit-without-hs.patch`, tested by
-  `tests/sd_bus_width`. A Zephyr SD stack fix, not the driver's.
+  `tests/sd_bus_width`. A Zephyr SD stack fix, not the driver's. Zephyr
+  main has since fixed it itself (`a8937199708`, 4 November 2026), and
+  the patch went when the pin moved to main.
 - [x] **Rerun the 2 GB card with that fix**, with the test image written
   to it (eleventh run): 4 bits, four times the speed, every test passed.
+- [ ] **Run the qualification image on the new pin** (main `c9e38773358`,
+  19 November 2026): the 2 GB card, to check main's own bus-width fix
+  (`test_bus_4bit`) and the reworked firmware patch on hardware, and the
+  32 GB or SDXC card at 50 MHz for finding 4's fix
+  (`test_data_timeout_covers_busy`).
 - [ ] **Read FAT16 in the qualification harness**, so a card with its
   factory FAT16 partition (most cards of 2 GB or less) gets its boot
   partition checked; or write the test image to such cards, as
