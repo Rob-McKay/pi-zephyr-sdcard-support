@@ -6,11 +6,13 @@
 # docs/UPSTREAM.md.
 patches:
   # BCM283x SDHost driver for the microSD slot (rpi_zero_2w upstream; the
-  # rpi_3a_plus board here enables it). Approved, milestone v4.6.0. From the
-  # PR's head 1df4a7e9da94 (rebased on 28 October 2026 onto v4.5.0-rc3, the
-  # driver unchanged); applies unchanged on v4.5.0. The driver under test.
+  # rpi_3a_plus board here enables it). Approved, milestone v4.6.0. The
+  # PR's head 94b76f2d1684 (19 November 2026), which is based on main;
+  # here its driver, Kconfig and binding files and its pin-header hunk,
+  # with its devicetree, pinctrl and board hunks in their v4.5.0 context
+  # (the same lines added). The driver under test.
   - path: zephyr/pr110196-bcm2835-sdhost.patch
-    sha256sum: ca9f6ad0224dd48dbf9d2acf95370dac65e3ae85770a9a2e331219de5a50b638
+    sha256sum: 05c63ca38d220dba706b0a103fc09fda8bad505c5bc0075221e105dcd9dddd2b
     module: zephyr
     author: Jonathan E. Peace
     email: jep@alphabetiq.com
@@ -88,9 +90,12 @@ patches:
   # range ending past block 0xffffffff, so the request went to the card;
   # only the card's out-of-range error stopped it. Now read, write and
   # erase share one overflow-aware check, card_block_range_valid(). Not the
-  # SDHost driver's bug: still in Zephyr main on 1 November 2026. Tested by
-  # tests/sd_bounds and tests/sdcard_hw. Sent upstream as #123216; this is
-  # its head 2748a5f8d2e3 (amended 30 October 2026), without the header.
+  # SDHost driver's bug. Tested by tests/sd_bounds and tests/sdcard_hw.
+  # Sent upstream as #123216, which merged into main on 17 November 2026
+  # as f513d993a397, the same change as this patch (its head 2748a5f8d2e3
+  # without the header). v4.5.0 doesn't have it: drop this patch once the
+  # west.yml pin includes that commit (v4.6.0, or a v4.5 release if it is
+  # backported).
   - path: zephyr/sd-ops-bounds-overflow.patch
     sha256sum: fd89bd208c512b4f2fb3bdc066e532a02e6fe6420be0dcb0dd680787f25d0ff4
     module: zephyr
@@ -99,7 +104,9 @@ patches:
     date: 2026-10-21
     upstreamable: true
     merge-pr: https://github.com/zephyrproject-rtos/zephyr/pull/123216
-    merge-status: false
+    merge-status: true
+    merge-commit: f513d993a39733ce51b398998dc288b7db53da90
+    merge-date: 2026-11-17
   # Zephyr's SD stack switched a card to a 4-bit bus only after switching
   # it to High Speed (sdmmc_init_hs()), so a card without High Speed stayed
   # on one data line, at a quarter of the speed: seen on a 2 GB card on a

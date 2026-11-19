@@ -49,12 +49,11 @@ results and fixes that can be offered to the PR.
   reach 24.0 MB/s, writes 22.6 MB/s; the soak wrote 3.3 GB and read 3.9 GB.
 - **Zephyr's own suites** on the same Pi and card: `sdhc` 5/5,
   `disk_access` 3/3.
-- **Upstream:** the SD stack's range-check fix is Zephyr PR
+- **Upstream:** the SD stack's range-check fix, Zephyr PR
   [#123216](https://github.com/zephyrproject-rtos/zephyr/pull/123216)
-  (`sd: check read and write ranges for overflow`, amended on 29 and 30
-  October 2026 to share one range check between read, write and erase),
-  open and
-  awaiting review; the rest isn't posted yet
+  (`sd: check read and write ranges for overflow`), **merged into Zephyr
+  main on 17 November 2026**; it is carried here until the pin includes
+  it. The rest isn't posted yet
   ([UPSTREAM.md](docs/UPSTREAM.md)). Zephyr is pinned to the v4.5.0
   release.
 

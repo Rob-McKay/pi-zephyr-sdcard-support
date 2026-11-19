@@ -1,4 +1,4 @@
-From 1df4a7e9da9430ddb15e97330965f02d1fd45470 Mon Sep 17 00:00:00 2001
+From e481b40a960a4653c5bbcef1e32a25d40abe258e Mon Sep 17 00:00:00 2001
 From: "Jonathan E. Peace" <jep@alphabetiq.com>
 Date: Tue, 26 May 2026 12:03:22 -0700
 Subject: [PATCH] drivers: sdhc: add Broadcom BCM283x SDHost controller driver
@@ -6,11 +6,10 @@ Subject: [PATCH] drivers: sdhc: add Broadcom BCM283x SDHost controller driver
 Add a polled implementation of the sdhc.h device API for the legacy
 SDHost controller present on BCM2835/2836/2837/2710 SoCs. This is
 the second SD controller on these SoCs, distinct from the Arasan
-SDHCI block; on Pi 3 / Pi Zero 2 W it drives the external microSD
-card slot via GPIO 48..53 at ALT0. Register layout is proprietary
-Broadcom (SDCMD/SDARG/SDHSTS/SDEDM/SDDATA/SDCDIV at offsets
-0x00..0x50), not SDHCI-spec, so a new driver rather than a quirk on
-sdhc_bcm2835.
+SDHCI block; on Pi 3 / Pi Zero 2 W it drives the microSD card slot.
+Register layout is proprietary Broadcom (SDCMD/SDARG/SDHSTS/SDEDM/
+SDDATA/SDCDIV at offsets 0x00..0x50), not SDHCI-spec, so a new
+driver rather than a quirk on sdhc_bcm2835.
 
 Supported:
 
@@ -22,7 +21,7 @@ Supported:
   * Auto-CMD12: open-ended CMD18/CMD25 are terminated with
     STOP_TRANSMISSION so the card returns to the transfer state (the
     SD subsystem leaves the stop to the host)
-  * 1-bit and 4-bit bus widths
+  * 1-bit and 4-bit bus widths, checked at build time
   * Clock divider math via SDCDIV
   * Soft reset: card power off, command and data registers back to
     idle, SDEDM FIFO thresholds of 4 (the controller is only reliable
@@ -59,13 +58,13 @@ Signed-off-by: Jonathan E. Peace <jep@alphabetiq.com>
  .../raspberrypi/rpi_zero_2w/rpi_zero_2w.dts   |  16 +
  drivers/sdhc/CMakeLists.txt                   |   1 +
  drivers/sdhc/Kconfig                          |   1 +
- drivers/sdhc/Kconfig.bcm2835_sdhost           |  13 +
- drivers/sdhc/sdhc_bcm2835_sdhost.c            | 793 ++++++++++++++++++
+ drivers/sdhc/Kconfig.bcm2835_sdhost           |  12 +
+ drivers/sdhc/sdhc_bcm2835_sdhost.c            | 795 ++++++++++++++++++
  dts/arm/broadcom/bcm283x-pinctrl.dtsi         |  16 +
  dts/arm64/broadcom/bcm2710.dtsi               |   9 +
- dts/bindings/sdhc/brcm,bcm2835-sdhost.yaml    |  37 +
- .../dt-bindings/pinctrl/bcm2711-pinctrl.h     |  18 +
- 9 files changed, 904 insertions(+)
+ dts/bindings/sdhc/brcm,bcm2835-sdhost.yaml    |  33 +
+ .../dt-bindings/pinctrl/bcm2711-pinctrl.h     |  14 +
+ 9 files changed, 897 insertions(+)
  create mode 100644 drivers/sdhc/Kconfig.bcm2835_sdhost
  create mode 100644 drivers/sdhc/sdhc_bcm2835_sdhost.c
  create mode 100644 dts/bindings/sdhc/brcm,bcm2835-sdhost.yaml
@@ -127,10 +126,10 @@ index 60381c4abad..ef8cf597673 100644
  source "drivers/sdhc/Kconfig.imx"
 diff --git a/drivers/sdhc/Kconfig.bcm2835_sdhost b/drivers/sdhc/Kconfig.bcm2835_sdhost
 new file mode 100644
-index 00000000000..703b073e874
+index 00000000000..fd52c5f6235
 --- /dev/null
 +++ b/drivers/sdhc/Kconfig.bcm2835_sdhost
-@@ -0,0 +1,13 @@
+@@ -0,0 +1,12 @@
 +# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
 +# SPDX-License-Identifier: Apache-2.0
 +
@@ -141,15 +140,14 @@ index 00000000000..703b073e874
 +	select SDHC_SUPPORTS_NATIVE_MODE
 +	help
 +	  Enable the Broadcom BCM283x legacy SDHost host controller
-+	  driver. Drives the external microSD slot via GPIO 48..53 at
-+	  ALT0. Polled implementation of the sdhc.h device API; no IRQ
-+	  support yet, no DMA yet.
++	  driver. Polled implementation of the sdhc.h device API; no
++	  IRQ support yet, no DMA yet.
 diff --git a/drivers/sdhc/sdhc_bcm2835_sdhost.c b/drivers/sdhc/sdhc_bcm2835_sdhost.c
 new file mode 100644
-index 00000000000..a9adc360b32
+index 00000000000..d6609bd21e9
 --- /dev/null
 +++ b/drivers/sdhc/sdhc_bcm2835_sdhost.c
-@@ -0,0 +1,793 @@
+@@ -0,0 +1,795 @@
 +/*
 + * Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
 + *
@@ -158,9 +156,8 @@ index 00000000000..a9adc360b32
 + * Broadcom BCM283x legacy SD Host Controller.
 + *
 + * Second SD controller on the BCM283x SoCs, distinct from the Arasan
-+ * SDHCI block. Drives the external microSD slot via GPIO 48..53 at
-+ * ALT0. Register layout is proprietary Broadcom (SDCMD/SDARG/SDHSTS/
-+ * SDEDM/SDDATA/SDCDIV at offsets 0x00..0x50), not SDHCI-spec.
++ * SDHCI block. Register layout is proprietary Broadcom (SDCMD/SDARG/
++ * SDHSTS/SDEDM/SDDATA/SDCDIV at offsets 0x00..0x50), not SDHCI-spec.
 + *
 + * Polled implementation of the sdhc.h device API: command path
 + * supports R1/R1b/R2/R3/R6/R7 (busy responses wait on DAT0 via the
@@ -924,6 +921,9 @@ index 00000000000..a9adc360b32
 +};
 +
 +#define SDHC_BCM2835_SDHOST_INIT(inst)						\
++	BUILD_ASSERT(DT_INST_PROP(inst, bus_width) == 1 ||			\
++		     DT_INST_PROP(inst, bus_width) == 4,			\
++		     "bus-width must be 1 or 4");				\
 +	PINCTRL_DT_INST_DEFINE(inst);						\
 +	static const struct sdhc_bcm2835_sdhost_config				\
 +		sdhc_bcm2835_sdhost_cfg_##inst = {				\
@@ -989,10 +989,10 @@ index aadd2489c86..1515ddd5130 100644
  };
 diff --git a/dts/bindings/sdhc/brcm,bcm2835-sdhost.yaml b/dts/bindings/sdhc/brcm,bcm2835-sdhost.yaml
 new file mode 100644
-index 00000000000..c04f0b6e4f4
+index 00000000000..bd457687eaf
 --- /dev/null
 +++ b/dts/bindings/sdhc/brcm,bcm2835-sdhost.yaml
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,33 @@
 +# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
 +# SPDX-License-Identifier: Apache-2.0
 +
@@ -1002,8 +1002,7 @@ index 00000000000..c04f0b6e4f4
 +  Non-Arasan SD controller on the BCM283x SoCs, with a proprietary
 +  Broadcom register layout (SDCMD/SDARG/SDHSTS/SDEDM/SDDATA/SDCDIV
 +  at offsets 0x00..0x50), distinct from the Arasan SDHCI block on the
-+  same SoC. Drives the external microSD card slot via GPIO 48..53 at
-+  ALT0.
++  same SoC. The pins come from pinctrl-0.
 +
 +compatible: "brcm,bcm2835-sdhost"
 +
@@ -1023,23 +1022,18 @@ index 00000000000..c04f0b6e4f4
 +
 +  bus-width:
 +    type: int
-+    default: 4
-+    enum:
-+      - 1
-+      - 4
++    required: true
 +    description: |
 +      Number of data lines wired between the controller and the
-+      card.
++      card: 1 or 4. The SDHost has no 8-bit mode.
 diff --git a/include/zephyr/dt-bindings/pinctrl/bcm2711-pinctrl.h b/include/zephyr/dt-bindings/pinctrl/bcm2711-pinctrl.h
-index 631896f8c20..e54a24a08bb 100644
+index 631896f8c20..2130930b96a 100644
 --- a/include/zephyr/dt-bindings/pinctrl/bcm2711-pinctrl.h
 +++ b/include/zephyr/dt-bindings/pinctrl/bcm2711-pinctrl.h
-@@ -145,4 +145,22 @@
+@@ -145,4 +145,18 @@
  #define I2C6_SDA_GPIO22   BCM2711_PINMUX(22, BCM2711_FSEL_ALT5)
  #define I2C6_SCL_GPIO23   BCM2711_PINMUX(23, BCM2711_FSEL_ALT5)
  
-+/** @cond INTERNAL_HIDDEN */
-+
 +/* --- Legacy SDHost: SDCLK / SDCMD / SDDAT0..3 (GPIO48-53, ALT0) --- */
 +/** @brief SDHost clock on GPIO 48 via ALT0. */
 +#define SDHOST_CLK_GPIO48   BCM2711_PINMUX(48, BCM2711_FSEL_ALT0)
@@ -1053,8 +1047,6 @@ index 631896f8c20..e54a24a08bb 100644
 +#define SDHOST_DAT2_GPIO52  BCM2711_PINMUX(52, BCM2711_FSEL_ALT0)
 +/** @brief SDHost data line 3 on GPIO 53 via ALT0. */
 +#define SDHOST_DAT3_GPIO53  BCM2711_PINMUX(53, BCM2711_FSEL_ALT0)
-+
-+/** @endcond */
 +
  #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_BCM2711_PINCTRL_H_ */
 -- 
