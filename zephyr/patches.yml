@@ -5,19 +5,6 @@
 # drop it once the west.yml pin includes the merged change. See
 # docs/UPSTREAM.md.
 patches:
-  # BCM283x SDHost driver for the microSD slot (rpi_zero_2w upstream; the
-  # rpi_3a_plus board here enables it). Approved, milestone v4.6.0. The
-  # PR's head 94b76f2d1684 (19 November 2026) as it is: the west.yml pin
-  # is the main commit it is based on. The driver under test.
-  - path: zephyr/pr110196-bcm2835-sdhost.patch
-    sha256sum: f2cdddc1b2f88adfe10cd2604b4d46bbfee62bda465cae6b0b06ff2caa3451a3
-    module: zephyr
-    author: Jonathan E. Peace
-    email: jep@alphabetiq.com
-    date: 2026-05-26
-    upstreamable: true
-    merge-pr: https://github.com/zephyrproject-rtos/zephyr/pull/110196
-    merge-status: false
   # Review finding 12 (docs/reviews/pr110196-sdhost-review.md), found on a
   # real Pi 3A+: an open-ended read (CMD18) sometimes runs on into the
   # block after the last one asked for before the driver stops the card;
@@ -25,8 +12,9 @@ patches:
   # every later request fail until a re-init (about 12 s). Now CMD12 is
   # sent at once and the FIFO emptied, the extra words discarded, until
   # the command and the data phase are done; a failed open-ended read is
-  # stopped the same way (finding 2, reads). On top of PR #110196. Not
-  # yet sent upstream.
+  # stopped the same way (finding 2, reads). On top of the SDHost driver,
+  # which merged into Zephyr main as dde0e0565b0 (PR #110196). Not yet
+  # sent upstream.
   - path: zephyr/sdhost-stop-open-read.patch
     sha256sum: f8e44b9d4a07fa619d22ea55f30ebd38da0a74d5cb2ad2e7a2c06ae77b3b1ce7
     module: zephyr

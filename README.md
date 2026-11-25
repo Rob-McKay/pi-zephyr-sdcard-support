@@ -1,12 +1,12 @@
 # SD card support for the Raspberry Pi 3A+ on Zephyr
 
-Tests, a code review and fixes for the BCM283x SDHost (microSD) driver
-proposed for Zephyr in
-[PR #110196](https://github.com/zephyrproject-rtos/zephyr/pull/110196), on a
-Raspberry Pi 3A+.
+Tests, a code review and fixes for Zephyr's BCM283x SDHost (microSD)
+driver, added by
+[PR #110196](https://github.com/zephyrproject-rtos/zephyr/pull/110196)
+(merged into Zephyr main on 22 November 2026), on a Raspberry Pi 3A+.
 
 The aim is a driver that applications can rely on for storage, and
-results and fixes that can be offered to the PR.
+results and fixes that can be offered upstream.
 
 ## Status
 
@@ -55,12 +55,12 @@ results and fixes that can be offered to the PR.
   main on 17 November 2026**, and the pin includes it. The rest isn't
   posted yet
   ([UPSTREAM.md](docs/UPSTREAM.md)).
-- **Zephyr pin:** the main commit #110196 is based on (`c9e38773358`,
-  19 November 2026), so the driver PR applies as posted; it moves to the
-  v4.6.0 tag at release (scheduled for April 2027). That pin includes
-  #123216 and main's own fix for the 4-bit bus, so this repository now
-  carries five patches: the driver PR, three driver fixes and the
-  firmware mailbox's bus address.
+- **Zephyr pin:** main `33a58b1611e1` (25 November 2026); it moves to
+  the v4.6.0 tag at release (scheduled for April 2027). Main has the
+  driver itself (#110196 merged on 22 November, unchanged from the head
+  tested here, without this repository's fixes), #123216 and its own fix
+  for the 4-bit bus, so this repository now carries four patches: three
+  driver fixes and the firmware mailbox's bus address.
 
 ## Layout
 
@@ -74,7 +74,7 @@ results and fixes that can be offered to the PR.
 | `tests/hal_bcm2835` | Unit tests of the HAL headers |
 | `hal/include/hal` | Register access for the tests (SDHost, GPIO) |
 | `boards/raspberrypi/rpi_3a_plus` | The Pi 3A+ board, with the SDHost node |
-| `zephyr/patches.yml`, `zephyr/patches/` | PR #110196 and the fixes (the driver, the firmware mailbox, and the SD stack's range check and bus width), applied by `west patch apply` |
+| `zephyr/patches.yml`, `zephyr/patches/` | The fixes to Zephyr (three to the driver, one to the firmware mailbox), applied by `west patch apply` |
 | `qemu/`, `scripts/run-qemu.sh` | Running the tests on QEMU's `raspi3ap` |
 | `scripts/check-*.py`, `cmake/strict.cmake` | The coding rules' checks ([CODING.md](docs/CODING.md), [CLAUDE.md](CLAUDE.md)): headers, docs, function size, global state and macro arguments, and the strict build |
 | `docs/` | [TESTING.md](docs/TESTING.md), [UPSTREAM.md](docs/UPSTREAM.md), [CODING.md](docs/CODING.md), the [review](docs/reviews/pr110196-sdhost-review.md) and hardware logs |

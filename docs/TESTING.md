@@ -3,7 +3,7 @@
 `make sd-qual-test` builds a test application,
 [`tests/sdcard_hw`](../tests/sdcard_hw), that tests the SD card driver from
 Zephyr [PR #110196](https://github.com/zephyrproject-rtos/zephyr/pull/110196)
-on a real Raspberry Pi 3A+ and card, as thoroughly as can be done without
+(in Zephyr main since 22 November 2026) on a real Raspberry Pi 3A+ and card, as thoroughly as can be done without
 special equipment.
 
 It goes through Zephyr's disk access API (`disk_access_read()`,
@@ -210,7 +210,7 @@ capacity and speed class, the Pi model, `RPI_CORE_FREQ`, the soak length
 and the seed. A summary for the PR could be:
 
 ```
-Pi 3A+ (BCM2837B0), core_freq 250, Zephyr <commit> + PR #110196 @ b3b4961
+Pi 3A+ (BCM2837B0), core_freq 250, Zephyr <commit> + this repository's patches @ <commit>
 Card: <brand model, 32 GB SDHC, class 10 / U1>
 make sd-qual-test, 10 min soak, seed <n>: <n> passed, <n> failed, <n> skipped
 Bus: 4-bit, <n> Hz; SDTOUT <n> ms

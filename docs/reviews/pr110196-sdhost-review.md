@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | PR | [zephyrproject-rtos/zephyr#110196](https://github.com/zephyrproject-rtos/zephyr/pull/110196), "drivers: sdhc: add Broadcom BCM283x SDHost controller driver" (Jonathan E. Peace) |
-| Commit reviewed | `b3b4961`, as carried in [`zephyr/patches/zephyr/pr110196-bcm2835-sdhost.patch`](../../zephyr/patches/zephyr/pr110196-bcm2835-sdhost.patch) |
+| Commit reviewed | `b3b4961`, the PR's version of 26 May 2026. Its later heads changed no behaviour, and it merged into Zephyr main on 22 November 2026 as `dde0e0565b0`, so the findings apply to the merged driver; line numbers are `b3b4961`'s |
 | Date | 17 October 2026 |
 | Focus | Undefined behaviour (UB), implementation-defined behaviour (IB), race conditions, security |
 | Method | Code reading of `drivers/sdhc/sdhc_bcm2835_sdhost.c` (all line numbers below), its devicetree and binding. Callers checked against the pinned Zephyr (`subsys/sd`, `include/zephyr/drivers/sdhc.h`, `drivers/pinctrl/pinctrl_bcm2711.c`). Zephyr's SD tests pass on QEMU (`make sd-test`), but QEMU completes transfers instantly and doesn't model the controller's timing. **On a real Pi 3A+ (20 October 2026):** findings 2, 4 and 6 reproduced (and 1, on a slow 2 GB card, later), and a new one, 12, found: see [section 7](#7-results-on-a-real-pi-3a) |
-| Status | **Not posted upstream.** [Section 5](#5-draft-upstream-comment) has a draft |
+| Status | **Not posted upstream.** The PR merged on 22 November 2026 without these findings; [section 5](#5-draft-upstream-comment) has a draft written for the PR, to recast as issues or pull requests against the merged driver |
 | Tests | On a real Pi 3A+ and card: [`tests/sdhost_hw`](../../tests/sdhost_hw) (`make sd-hw-test`), see [section 6.1](#61-on-a-real-pi-3a). Without hardware: findings 1-10 are reproduced against a register model by [`tests/sdhost_review`](../../tests/sdhost_review) (part of `make test`), see [section 6.2](#62-against-a-model-of-the-controller) |
 
 ## 1. Summary
@@ -593,8 +593,8 @@ Card timings above are from the SD Association's **SD Specifications Part 1, Phy
   the patch went when the pin moved to main.
 - [x] **Rerun the 2 GB card with that fix**, with the test image written
   to it (eleventh run): 4 bits, four times the speed, every test passed.
-- [ ] **Run the qualification image on the new pin** (main `c9e38773358`,
-  19 November 2026): the 2 GB card, to check main's own bus-width fix
+- [ ] **Run the qualification image on the new pin** (main `33a58b1611e1`,
+  25 November 2026, with the merged driver): the 2 GB card, to check main's own bus-width fix
   (`test_bus_4bit`) and the reworked firmware patch on hardware, and the
   32 GB or SDXC card at 50 MHz for finding 4's fix
   (`test_data_timeout_covers_busy`).
@@ -605,8 +605,8 @@ Card timings above are from the SD Association's **SD Specifications Part 1, Phy
 - [x] **Run Zephyr's suites as the PR reports them**, on the Pi 3A+
   (`make sd-zephyr-hw-test`): 5/5 and 3/3, as the PR reports on a Zero 2 W
   ([section 7](#7-results-on-a-real-pi-3a)).
-- [ ] **Report upstream on #110196:** the hardware results, plus the
-  review above (section 5), as a comment from your GitHub account. Offer
+- [ ] **Report upstream** (the PR merged on 22 November 2026, so now as issues or pull requests against the driver in main): the hardware results, plus the
+  review above (section 5), from your GitHub account. Offer
   patches for findings 1, 2, 4 and 5.
 - [ ] Depending on the answer, fix 1, 2, 4 and 5 upstream or as a
   follow-up patch in `zephyr/patches.yml`. Rerun `make sd-test`, `make sd-hw-test` (the
