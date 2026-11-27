@@ -55,7 +55,7 @@ results and fixes that can be offered upstream.
   main on 17 November 2026**, and the pin includes it. The rest isn't
   posted yet
   ([UPSTREAM.md](docs/UPSTREAM.md)).
-- **Zephyr pin:** main `33a58b1611e1` (25 November 2026); it moves to
+- **Zephyr pin:** main `50a6072c88fd` (27 November 2026); it moves to
   the v4.6.0 tag at release (scheduled for April 2027). Main has the
   driver itself (#110196 merged on 22 November, unchanged from the head
   tested here, without this repository's fixes), #123216 and its own fix

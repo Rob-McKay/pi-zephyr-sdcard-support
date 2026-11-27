@@ -593,8 +593,8 @@ Card timings above are from the SD Association's **SD Specifications Part 1, Phy
   the patch went when the pin moved to main.
 - [x] **Rerun the 2 GB card with that fix**, with the test image written
   to it (eleventh run): 4 bits, four times the speed, every test passed.
-- [ ] **Run the qualification image on the new pin** (main `33a58b1611e1`,
-  25 November 2026, with the merged driver): the 2 GB card, to check main's own bus-width fix
+- [ ] **Run the qualification image on the new pin** (main `50a6072c88fd`,
+  27 November 2026, with the merged driver): the 2 GB card, to check main's own bus-width fix
   (`test_bus_4bit`) and the reworked firmware patch on hardware, and the
   32 GB or SDXC card at 50 MHz for finding 4's fix
   (`test_data_timeout_covers_busy`).
