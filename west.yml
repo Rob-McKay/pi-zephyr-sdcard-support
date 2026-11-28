@@ -5,7 +5,7 @@
 # This repository is the manifest ("T2" topology): `west init -l` from here
 # fetches the pinned Zephyr, and no modules: the tests need none.
 #
-# The pin is a main-branch commit of the v4.6 development cycle (27
+# The pin is a main-branch commit of the v4.6 development cycle (28
 # November 2026): main has the SDHost driver (PR #110196, merged as
 # dde0e0565b0) and the other Raspberry Pi work that release branches won't
 # get. Move it to the v4.6.0 tag once that is released (scheduled for
@@ -18,7 +18,7 @@ manifest:
   projects:
     - name: zephyr
       remote: zephyrproject-rtos
-      revision: 50a6072c88fd8a28a554b14efa57c5ce99c4f6f3
+      revision: 06b50e7c66d27d519826a49e3c524ed762873cb6
       # No module imports; but Zephyr's west extensions ("west build",
       # "west patch") still have to be named.
       west-commands: scripts/west-commands.yml

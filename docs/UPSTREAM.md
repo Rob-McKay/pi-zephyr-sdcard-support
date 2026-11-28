@@ -8,7 +8,7 @@ of the Raspberry Pi series (RFC
 as the PR head this repository tested. It merged without this
 repository's review findings or fixes. This repository carries its own
 fixes as patches on the pinned Zephyr: a main-branch commit of the v4.6
-cycle (`50a6072c88fd`, 27 November 2026). Release branches only get bug
+cycle (`06b50e7c66d2`, 28 November 2026). Release branches only get bug
 fixes, so the Raspberry Pi drivers can only come from main; the pin moves
 to the v4.6.0 tag once that is released (scheduled for April 2027).
 
